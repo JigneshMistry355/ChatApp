@@ -8,6 +8,7 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
+          
           <Route path="/screen" element={<Screen />} />
         </Routes>
       </BrowserRouter>

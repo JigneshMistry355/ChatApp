@@ -20,16 +20,16 @@ export default function Screen() {
     const name_list = ['ABC', 'PQR', 'XYZ', '123'];
 
     const Chats:ChatArr[] = [
-        {ABC : "Hello, How are you?"},
-        {XYZ : "I'm Fine."},
-        {ABC : "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state?"},
-        {ABC :  "Come Here!" },
-        {XYZ :  "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state!" },
-        {XYZ :  "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state!" },
+        // {ABC : "Hello, How are you?"},
+        // {XYZ : "I'm Fine."},
+        // {ABC : "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state?"},
+        // {ABC :  "Come Here!" },
+        // {XYZ :  "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state!" },
+        // {XYZ :  "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state!" },
         // {ABC : "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state?"},
         // {XYZ :  "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state!" },
     ];
-cxc
+
     const [newText, setNewText] = useState('');
     const [Chat, setChats] = useState<ChatArr[]>(Chats); 
     const chatEndRef = useRef<HTMLDivElement | null>(null); 
@@ -97,7 +97,7 @@ cxc
 
     useEffect(() => {
         
-        if (received && received !== username) {
+        if (received) {
             console.log("Received text : ", received);
             setChats((prevChat) => [...prevChat, {XYZ: received.toString()}]);
         }
@@ -149,12 +149,12 @@ cxc
                         </div>
                     ))}
                 </div>
-                <div className="flex flex-grow flex-col bg-gradient-to-b from-gray-200 ">
+                <div className="flex flex-grow flex-col bg-gradient-to-b from-gray-200 min-h">
                     <div className="flex h-10 shadow-xl mb-4 bg-white w-full">
                         <p className="">Chat : ROOM ID</p>
                     </div>
                     
-                    <div className="flex flex-col overflow-y-auto">
+                    <div className="flex flex-col overflow-y-auto min-h-[420px]">
                         {Chat.map((name, index) => (
                             <div key={index} className="flex flex-grow flex-col w-full flex-wrap px-4 py-1">
                                 {Object.entries(name).map(([key, value]) => (
