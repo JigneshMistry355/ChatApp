@@ -1,5 +1,6 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom"
 import Screen from "./Chatscreen/screen"
+import Login from "./Login/Login"
 
 function App() {
 
@@ -10,6 +11,7 @@ function App() {
         <Routes>
           
           <Route path="/screen" element={<Screen />} />
+          <Route path="/" element={<Login />} />
         </Routes>
       </BrowserRouter>
     </>

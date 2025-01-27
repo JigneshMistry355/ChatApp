@@ -1,5 +1,6 @@
 import React, { useEffect, useState, useRef } from "react";
 import { w3cwebsocket as W3CWebSocket } from "websocket";
+import { useLocation } from 'react-router-dom'
 
 type Chat = {
     [key : number] : {
@@ -15,7 +16,10 @@ const client = new W3CWebSocket('ws://localhost:3000/');
 
 export default function Screen() {
 
-    
+    const { search } = useLocation();
+    const params = new URLSearchParams(search);
+    const data:string | null = params?.get('data');
+    console.log("type of usename : _____",typeof data)
 
     const name_list = ['ABC', 'PQR', 'XYZ', '123'];
 
@@ -34,7 +38,8 @@ export default function Screen() {
     const [Chat, setChats] = useState<ChatArr[]>(Chats); 
     const chatEndRef = useRef<HTMLDivElement | null>(null); 
     const [received, setReceived] = useState<string | ArrayBuffer>('')
-    const username = "ABC";
+    const [sender, setSender] = useState('');
+    const username:string | undefined = data?.toString() ?? 'anonymous';
     
     client.onopen = () => {
         console.log("Connected to websocket server")
@@ -53,10 +58,12 @@ export default function Screen() {
                 console.log("Websocket is not open")
             }
             
-            setChats((prevChat) => [...prevChat, {[username]: newText}]);
+            setChats((prevChat) => [...prevChat, {[username] : newText}]);
             setNewText("");
         } 
     }
+
+    
 
     useEffect(() => {
         
@@ -78,17 +85,17 @@ export default function Screen() {
                 }
     
                 console.log('Received message:', messageText); // Received message: {"sender":"ABC","text":"ddjdfgjh"}
-
+    
                 console.log('Received message:', typeof messageText); // string
     
                 const parsedMessage = JSON.parse(messageText); // converted to object
-
+    
                 console.log('Parsed message:', parsedMessage);
-
+    
                 console.log(typeof(parsedMessage.text))
     
-                // Process the parsed message
                 setReceived(parsedMessage.text);
+                setSender(parsedMessage.sender);
             } catch (error) {
                 console.error('Failed to process WebSocket message:', error);
             }
@@ -97,12 +104,12 @@ export default function Screen() {
 
     useEffect(() => {
         
-        if (received) {
+        if (received && sender) {
             console.log("Received text : ", received);
-            setChats((prevChat) => [...prevChat, {XYZ: received.toString()}]);
+            setChats((prevChat) => [...prevChat, {[sender] : received.toString()}]);
         }
         
-    },[received])
+    },[received, sender])
 
     useEffect(() => {
         chatEndRef.current?.scrollIntoView({behavior:'smooth'});
