@@ -149,12 +149,12 @@ export default function Screen() {
                         </div>
                     ))}
                 </div>
-                <div className="flex flex-grow flex-col bg-gradient-to-b from-gray-200 min-h">
-                    <div className="flex h-10 shadow-xl mb-4 bg-white w-full">
+                <div className="flex flex-grow justify-between flex-col bg-gradient-to-b from-gray-200 min-h">
+                    <div className="flex h-10 items-start shadow-xl mb-4 bg-white w-full">
                         <p className="">Chat : ROOM ID</p>
                     </div>
                     
-                    <div className="flex flex-col overflow-y-auto min-h-[420px]">
+                    <div className="flex flex-col overflow-y-auto items-start justify-start">
                         {Chat.map((name, index) => (
                             <div key={index} className="flex flex-grow flex-col w-full flex-wrap px-4 py-1">
                                 {Object.entries(name).map(([key, value]) => (
