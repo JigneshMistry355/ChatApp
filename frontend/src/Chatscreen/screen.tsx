@@ -145,7 +145,7 @@ export default function Screen() {
 
     return (
         <div className="flex flex-col h-screen w-screen bg-slate-200">
-           <div className="flex h-1/6 min-h-20 bg-gradient-to-b from-blue-800 to-gray-600 items-center justify-center">
+           <div className="flex h-1/6 min-h-20 bg-gradient-to-b from-amber-600 to-white items-center justify-center">
                 <h1 className="text-white font-bold text-2xl font-mono text-center justify-center items-center">Chat Screen</h1>
            </div>
            <div className="flex flex-row flex-grow h-5/6">

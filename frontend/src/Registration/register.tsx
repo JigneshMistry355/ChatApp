@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import Header from '../Header/header'
 
 export default function RegisterUser() {
 
@@ -32,19 +33,23 @@ export default function RegisterUser() {
     return (
       <>
 
-    <div className='fixed h-screen w-screen justify-center items-center bg-[url(src/assets/images/register-now.jpg)] bg-cover opacity-70 blur-sm z-0'></div>
+    <div className='fixed h-screen w-screen justify-center items-center bg-[url(src/assets/images/chat-image-background.jpg)] bg-cover opacity-80 blur-sm z-0'></div>
 
-      <div className='flex flex-row'>
+    <div className='flex flex-col h-screen'>
+      <div className='flex h-1/6 bg-gray-400/30 items-center justify-center z-10 shadow-2xl'>
+        <Header />
+      </div>
+      <div className='flex flex-row flex-grow h-5/6'>
         <div className='flex w-1/2'>
           
         </div>
-        <div className='flex justify-center items-center w-1/2 h-screen bg-black'>
-          <div className=' flex flex-col w-fit h-1/2 py-4 rounded-xl items-center justify-between shadow-3xl border-2 bg-white '>
-            <h1 className='text-center font-mono font-bold text-4xl bg-gradient-to-r from-orange-700 to-green-500 text-transparent bg-clip-text z-10'>Register</h1>
+        <div className='flex flex-grow justify-center items-center w-1/2 min-h-fit bg-black animate-slide-down'>
+          <div className=' flex flex-col w-fit h-1/2 min-h-fit py-4 rounded-xl items-center justify-between shadow-3xl border-2 bg-gradient-to-br from-white to-slate-400 opacity-90 z-10 animate-bounce-twice'>
+            <h1 className='text-center font-mono font-bold text-4xl bg-gradient-to-r from-orange-700 to-green-500 text-transparent bg-clip-text z-20'>Register</h1>
               <div className='flex flex-col m-4 px-4 justify-around  h-3/4'>
-                <div className='flex m-2 bg-fuchsia-300'>
+                <div className='flex m-2'>
                   <input 
-                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-10' 
+                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-20' 
                       type="text" 
                       placeholder='username' 
                       value={username}
@@ -53,7 +58,7 @@ export default function RegisterUser() {
                 </div>
                 <div className='flex m-2'>
                   <input 
-                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-10' 
+                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-20' 
                       type="email" 
                       placeholder='email' 
                       value={email}
@@ -62,7 +67,7 @@ export default function RegisterUser() {
                 </div>
                 <div className='flex m-2'>                                                             
                   <input 
-                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-10' 
+                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-20' 
                       type="password"  
                       placeholder='password'
                       value={password}
@@ -71,7 +76,7 @@ export default function RegisterUser() {
                 </div>
                 <div className='flex m-2'>                                                             
                   <input 
-                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-10' 
+                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-20' 
                       type="password"  
                       placeholder='confirm password'
                       value={confirmPassword}
@@ -79,7 +84,7 @@ export default function RegisterUser() {
                   />
                 </div>
             </div>
-            <div className='flex justify-center items-center'>
+            <div className='flex justify-center items-center my-4'>
                 <button 
                     className='shadow-lg px-6 bg-red-700 hover:bg-gradient-to-b hover:from-red-500 hover:to-red-700 py-2 rounded-md text-white z-10' 
                     type='button' 
@@ -89,8 +94,11 @@ export default function RegisterUser() {
             </div>
         </div>
       </div>
-
       </div>
+
+    </div>
+    
+      
       
       </>
     )
