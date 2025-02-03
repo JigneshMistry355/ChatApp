@@ -3,6 +3,7 @@ const http = require('http');
 const cors = require('cors')
 const WebSocket = require('ws');
 const { error } = require('console');
+const axios = require('axios');
 // const MongoClient = require('mongodb').MongoClient
 
 const app = express();
@@ -50,6 +51,26 @@ app.post('/userdata', (req, res) => {
   
 });
 
+const handleTranslation = async (text) => {
+  try {
+  const response = await axios.post('http://localhost:8000/get_text', { text });
+  
+      console.log("Response in function ---> ",response.data)
+      console.log("Response type in function ---> ",typeof response.data)
+      return response.data;
+      
+  }
+  catch(error) {
+      // console.log(error.response.data.message)
+      console.error("Error translating:", error.response?.data?.message || error.message);
+        return { error: "Translation failed" }; // Return an error message
+      // alert(error.response.data.message)
+  }
+  // navigate('/')
+  // console.log(`Data sent ${response}`);
+
+}
+
 // wss.setMaxListeners(20);
 
 // wss.on('connection', (ws) => {
@@ -70,31 +91,60 @@ app.post('/userdata', (req, res) => {
 
 wss.on('connection', (ws) => {
 
-  console.log("\nConnection established.....")
+  console.log("\nConnection established.....", ws)
   console.log(`New client connected. Total clients: ${wss.clients.size}`);
     
-    const messageHandler = (message) => {
+    const messageHandler = async (message) => {
       // message is automatically converted/parsed to JSON object
-      console.log("\nType of message received ____________ :",typeof message); // object
 
-      console.log('\nReceived message from client  ....   : %s', message); // {"sender":"ABC","text":"i m fine"}
+      try {
+        const messageStr = typeof message === "string" ? message : message.toString(); 
 
-      console.log(`Broadcasting to ${wss.clients.size} clients`);
+        const parsedMessage = JSON.parse(messageStr);
 
-      wss.clients.forEach((client) => {
+        console.log("\nType of message received ____________ :",typeof parsedMessage); // object
 
-        console.log(`\nChecking client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
+        console.log('\nReceived message from client  ....   : %s', parsedMessage.text); // {"sender":"ABC","text":"i m fine"}
 
-        if ((client !== ws) & (client.readyState === WebSocket.OPEN)) {
+        console.log(`Broadcasting to ${wss.clients.size} clients`);
 
-          console.log("Sending message type",typeof message) // object
+        console.log("Waiting for translation model to translate ..... ")
 
-          client.send(message); // message sent as object
+        console.log("mesage text -------->", parsedMessage.text)
+        console.log("Type of mesage text -------->",typeof parsedMessage.text)
 
-          console.log(`\nMessage was sent to : ${JSON.stringify(ws)}`, message.toString());
-          console.log("\n\n\n\n\n\n")
-        }
-      });
+        const translation = await handleTranslation(parsedMessage.text);
+
+        console.log("Translation result:", translation);
+
+        console.log("Sending translated data to all ====> ",typeof translation);
+
+        wss.clients.forEach((client) => {
+
+
+          console.log(`\nChecking client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
+  
+          if ((client !== ws) && (client.readyState === WebSocket.OPEN)) {
+  
+            console.log("Sending message type",typeof translation) // object
+
+            parsedMessage.text = translation;
+  
+            client.send(JSON.stringify(parsedMessage)); // message sent as object
+  
+            console.log(`\nMessage was sent to : ${JSON.stringify(ws)}`);
+            console.log("\n\n\n\n\n\n")
+          }
+        });
+
+      }catch(error){
+        console.error("Error parsing message:", error);
+      }
+      
+
+      
+
+      
     };
   
     ws.on('message', messageHandler);

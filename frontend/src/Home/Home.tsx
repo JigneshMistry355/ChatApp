@@ -10,7 +10,7 @@ function Home() {
                 <Header />
             </div>
             <div className='flex flex-grow'>
-
+                  Hello
             </div>
         </div>
     </>

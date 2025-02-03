@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import React, { lazy, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 function Login() {
@@ -10,7 +10,12 @@ function Login() {
   const [password, setPassword] = useState('') 
 
   const handleLogin = () => {
-    navigate(`/screen?data=${username}`)
+    if (username && password){
+      navigate(`/screen?username=${username}&password=${password}`);
+    }
+    else {
+      alert("Fill the details")
+    }
   }
     
   return (

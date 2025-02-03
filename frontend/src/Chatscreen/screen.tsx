@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useRef } from "react";
-import { w3cwebsocket as W3CWebSocket } from "websocket";
+import { w3cwebsocket, w3cwebsocket as W3CWebSocket } from "websocket";
 import { useLocation } from 'react-router-dom'
+import axios from "axios";
 
 type Chat = {
     [key : number] : {
@@ -12,16 +13,35 @@ type ChatArr = {
     [key : string] : string
 }
 
-const client = new W3CWebSocket('ws://localhost:3000/');
+class CustomW3WebSocket extends w3cwebsocket {
+    id : string | null | undefined
+    preferred_language : string | null | undefined
+    constructor (url : string, id:string | null | undefined, preferred_language:string | null | undefined) {
+        super(url);
+        this.id = id;
+        this.preferred_language = preferred_language
+    }
+}
+
+// const  location  = useLocation();
+// const {username, preferred_language} = location.state || {}
+
+const client = new CustomW3WebSocket('ws://localhost:3000/', null, null)
 
 export default function Screen() {
 
     const { search } = useLocation();
     const params = new URLSearchParams(search);
-    const data:string | null = params?.get('data');
-    console.log("type of usename : _____",typeof data)
+    const data:string | null = params?.get('username');
+    const preferred_language: string | null = params?.get('password')
 
-    const name_list = ['ABC', 'PQR', 'XYZ', '123'];
+    console.log("Username ------------------>",data)
+    console.log("Password ------------------>",preferred_language)
+
+    console.log("type of usename : _____",typeof data);
+    console.log("type of language : _____",typeof preferred_language);
+
+    const name_list = ['Jignesh', 'Sahil', 'Tanay', 'Deep'];
 
     const Chats:ChatArr[] = [
         // {ABC : "Hello, How are you?"},
@@ -34,22 +54,32 @@ export default function Screen() {
         // {XYZ :  "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state!" },
     ];
 
+    
+
     const [newText, setNewText] = useState('');
     const [Chat, setChats] = useState<ChatArr[]>(Chats); 
     const chatEndRef = useRef<HTMLDivElement | null>(null); 
     const [received, setReceived] = useState<string | ArrayBuffer>('')
     const [sender, setSender] = useState('');
+   
+    
     const username:string | undefined = data?.toString() ?? 'anonymous';
     
+   if (client) {
+    client.id = username
+    client.preferred_language = preferred_language
     client.onopen = () => {
         console.log("Connected to websocket server")
+        console.log(client)
     }
+   }
+    
 
     const handleSend = (event:React.FormEvent) => {
         event?.preventDefault();
         if (newText.trim() !== "") {
             const message = JSON.stringify({sender:username, text:newText})
-            if (client.readyState === WebSocket.OPEN){
+            if (client?.readyState === WebSocket.OPEN){
                 // Message sent as a JSON string 
                 console.log("\nMessage type ::: ", typeof message) //string
                 console.log("\n Message sent ::: ",message) // {sender:username, text:newText}
@@ -63,10 +93,28 @@ export default function Screen() {
         } 
     }
 
-    
+    const [translated_response, setTranslatedResponse] = useState('')
+    // const handleTranslation = async (text:string) => {
+
+    //     await axios.post('http://localhost:8000/get_text', 
+    //         {text},
+    //         )
+    //     .then((response) => {
+    //         setTranslatedResponse(response.data);
+    //         console.log(response.data)
+    //     })
+    //     .catch((error) => {
+    //         console.log(error.response.data.message)
+    //         alert(error.response.data.message)
+    //     })
+    //     // navigate('/')
+    //     // console.log(`Data sent ${response}`);
+    //     return translated_response
+    // }
 
     useEffect(() => {
-        
+
+        if (client)
         client.onmessage = async (message) => {
             try {
                 let messageText: string;
@@ -91,11 +139,14 @@ export default function Screen() {
                 const parsedMessage = JSON.parse(messageText); // converted to object
     
                 console.log('Parsed message:', parsedMessage);
+
     
                 console.log(typeof(parsedMessage.text))
+                // console.log(result)
     
                 setReceived(parsedMessage.text);
                 setSender(parsedMessage.sender);
+
             } catch (error) {
                 console.error('Failed to process WebSocket message:', error);
             }
@@ -106,6 +157,7 @@ export default function Screen() {
         
         if (received && sender) {
             console.log("Received text : ", received);
+
             setChats((prevChat) => [...prevChat, {[sender] : received.toString()}]);
         }
         

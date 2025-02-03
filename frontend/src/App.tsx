@@ -11,7 +11,6 @@ function App() {
     <>
       <BrowserRouter>
         <Routes>
-          
           <Route path="/screen" element={<Screen />} />
           <Route path="/Login" element={<Login />} />
           <Route path="/register" element={<RegisterUser />} />
