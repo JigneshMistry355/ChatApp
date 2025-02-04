@@ -4,6 +4,7 @@ const cors = require('cors')
 const WebSocket = require('ws');
 const { error } = require('console');
 const axios = require('axios');
+const { text } = require('stream/consumers');
 // const MongoClient = require('mongodb').MongoClient
 
 const app = express();
@@ -53,7 +54,8 @@ app.post('/userdata', (req, res) => {
 
 const handleTranslation = async (text) => {
   try {
-  const response = await axios.post('http://localhost:8000/get_text', { text });
+    console.log("Loggging .......................................",text)
+  const response = await axios.post('http://localhost:8000/get_text', text );
   
       console.log("Response in function ---> ",response.data)
       console.log("Response type in function ---> ",typeof response.data)
@@ -89,44 +91,73 @@ const handleTranslation = async (text) => {
 //     });
 // });
 
+
+let target_language = {};
+// { en: 'Hello', es: 'hello' }
+
 wss.on('connection', (ws) => {
 
-  console.log("\nConnection established.....", ws)
-  console.log(`New client connected. Total clients: ${wss.clients.size}`);
+    console.log("\nConnection established.....")
+    console.log(`\nNew client connected. Total clients: ${ wss.clients.size }`);
+
+    
     
     const messageHandler = async (message) => {
       // message is automatically converted/parsed to JSON object
+
+      
 
       try {
         const messageStr = typeof message === "string" ? message : message.toString(); 
 
         const parsedMessage = JSON.parse(messageStr);
 
-        console.log("\nType of message received ____________ :",typeof parsedMessage); // object
+        ws.sender = parsedMessage.sender
+        ws.preferred_language = parsedMessage.preferred_language
+        console.log(`\n✅ Sender of message :  Username = ${ws.sender}, Language = ${ws.preferred_language}`);
 
-        console.log('\nReceived message from client  ....   : %s', parsedMessage.text); // {"sender":"ABC","text":"i m fine"}
+        if (parsedMessage.text === 'connection_request'){
+          return;
+        }
 
-        console.log(`Broadcasting to ${wss.clients.size} clients`);
+        // console.log("\nType of message received ____________ :",typeof parsedMessage); // object
 
-        console.log("Waiting for translation model to translate ..... ")
+        console.log('\nReceived message object from client  ....   : %s', parsedMessage); // {"sender":"ABC","text":"i m fine"}
 
-        console.log("mesage text -------->", parsedMessage.text)
-        console.log("Type of mesage text -------->",typeof parsedMessage.text)
+        console.log(`\nBroadcasting to ${wss.clients.size -1} other clients`);
 
-        const translation = await handleTranslation(parsedMessage.text);
+        console.log("\nWaiting for translation model to translate ..... ")
 
-        console.log("Translation result:", translation);
+        console.log("\nmesage text -------->", parsedMessage.text)
+        console.log("\nType of mesage text -------->",typeof parsedMessage.text)
 
-        console.log("Sending translated data to all ====> ",typeof translation);
+        console.log("111111  ABABABAB -----> ", target_language)
+        console.log(target_language[ws.sender])
+
+        if (!target_language[ws.sender]){
+          target_language[ws.preferred_language] = {}
+        }
+        target_language[ws.preferred_language] = parsedMessage.text
+        
+
+        console.log("22222  ABABABAB -----> ", target_language)
+        
+        const translation = await handleTranslation(target_language);
+
+        console.log("\nTranslation result:", translation);
+
+        console.log("\nSending translated data to all ====> ",typeof translation);
+
+        // console.log("\nTarget language list ------>", target_language)
 
         wss.clients.forEach((client) => {
 
-
-          console.log(`\nChecking client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
+          console.log(`\nSending reply to client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
   
           if ((client !== ws) && (client.readyState === WebSocket.OPEN)) {
   
-            console.log("Sending message type",typeof translation) // object
+            // console.log("Sending message type",typeof translation) // object
+            console.log(`Sending reply to :  Username: ${client.sender}, Language: ${client.preferred_language}`);
 
             parsedMessage.text = translation;
   
@@ -140,11 +171,6 @@ wss.on('connection', (ws) => {
       }catch(error){
         console.error("Error parsing message:", error);
       }
-      
-
-      
-
-      
     };
   
     ws.on('message', messageHandler);

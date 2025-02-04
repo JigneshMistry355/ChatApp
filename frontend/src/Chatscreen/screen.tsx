@@ -1,32 +1,60 @@
 import React, { useEffect, useState, useRef } from "react";
-import { w3cwebsocket, w3cwebsocket as W3CWebSocket } from "websocket";
+import { w3cwebsocket } from "websocket";
 import { useLocation } from 'react-router-dom'
-import axios from "axios";
+// import axios from "axios";
 
-type Chat = {
-    [key : number] : {
-        [key : string] : string
-    }
-}
+// type Chat = {
+//     [key : number] : {
+//         [key : string] : string
+//     }
+// }
 
 type ChatArr = {
     [key : string] : string
 }
 
 class CustomW3WebSocket extends w3cwebsocket {
-    id : string | null | undefined
+    
     preferred_language : string | null | undefined
-    constructor (url : string, id:string | null | undefined, preferred_language:string | null | undefined) {
+    username : string | null | undefined
+    text : string | null | undefined
+
+    constructor (url : string, preferred_language:string | null | undefined, username : string | null | undefined, text:string | null | undefined, ) {
         super(url);
-        this.id = id;
         this.preferred_language = preferred_language
+        this.username = username
+        this.text = text
+
+        this.onopen = () => {
+            console.log("Connected to WebSocket server ... ");
+            this.send(
+                JSON.stringify({
+                    sender : this.username,
+                    preferred_language : this.preferred_language,
+                    text : 'connection_request'
+                    
+                })
+            )
+        }
     }
 }
 
 // const  location  = useLocation();
 // const {username, preferred_language} = location.state || {}
 
-const client = new CustomW3WebSocket('ws://localhost:3000/', null, null)
+const getUrlParams = () => {
+    const url = new URL(window.location.href);
+    return {
+        username: url.searchParams.get("username"),
+        password: url.searchParams.get("password")
+    };
+};
+
+// Use it anywhere
+const { username, password } = getUrlParams();
+// console.log(`ID: ${id}, Username: ${username}`);
+
+const client = new CustomW3WebSocket('ws://localhost:3000/', password, username, null);
 
 export default function Screen() {
 
@@ -35,11 +63,12 @@ export default function Screen() {
     const data:string | null = params?.get('username');
     const preferred_language: string | null = params?.get('password')
 
-    console.log("Username ------------------>",data)
-    console.log("Password ------------------>",preferred_language)
 
-    console.log("type of usename : _____",typeof data);
-    console.log("type of language : _____",typeof preferred_language);
+    // console.log("Username ------------------>",data)
+    // console.log("Password ------------------>",preferred_language)
+
+    // console.log("type of usename : _____",typeof data);
+    // console.log("type of language : _____",typeof preferred_language);
 
     const name_list = ['Jignesh', 'Sahil', 'Tanay', 'Deep'];
 
@@ -54,6 +83,14 @@ export default function Screen() {
         // {XYZ :  "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state!" },
     ];
 
+    // const [client, setClient] = useState<CustomW3WebSocket>();
+
+    // useEffect(() => {
+    //     const newClient = new CustomW3WebSocket('ws://localhost:3000/', username, preferred_language, username)
+    //     setClient(newClient);
+
+    // },[])
+
     
 
     const [newText, setNewText] = useState('');
@@ -65,20 +102,21 @@ export default function Screen() {
     
     const username:string | undefined = data?.toString() ?? 'anonymous';
     
-   if (client) {
-    client.id = username
-    client.preferred_language = preferred_language
-    client.onopen = () => {
-        console.log("Connected to websocket server")
-        console.log(client)
-    }
-   }
+//    if (client) {
+//     client.id = username
+//     client.preferred_language = preferred_language
+//     client.username = username
+//     client.onopen = () => {
+//         console.log("Connected to websocket server")
+//         console.log(client)
+//     }
+//    }
     
 
     const handleSend = (event:React.FormEvent) => {
         event?.preventDefault();
         if (newText.trim() !== "") {
-            const message = JSON.stringify({sender:username, text:newText})
+            const message = JSON.stringify({sender:username, preferred_language: preferred_language, text:newText})
             if (client?.readyState === WebSocket.OPEN){
                 // Message sent as a JSON string 
                 console.log("\nMessage type ::: ", typeof message) //string
@@ -93,7 +131,7 @@ export default function Screen() {
         } 
     }
 
-    const [translated_response, setTranslatedResponse] = useState('')
+    // const [translated_response, setTranslatedResponse] = useState('')
     // const handleTranslation = async (text:string) => {
 
     //     await axios.post('http://localhost:8000/get_text', 
