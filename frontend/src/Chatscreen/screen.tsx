@@ -256,8 +256,8 @@ export default function Screen() {
 
     return (
         <div className="flex flex-col h-screen w-screen bg-slate-200">
-           <div className="flex h-1/6 min-h-20 bg-gradient-to-b from-amber-600 to-white items-center justify-center">
-                <h1 className="text-white font-bold text-2xl font-mono text-center justify-center items-center">Chat Screen</h1>
+           <div className="flex h-1/6 min-h-20 bg-gradient-to-b from-[#23004b] via-[#470592] to-[#6a0ad6] items-center justify-center">
+                <h1 className="text-white font-bold text-2xl font-mono text-center justify-center items-center">MultiLinguo</h1>
            </div>
            <div className="flex flex-row flex-grow h-5/6">
                 <div className="w-1/4 bg-white">
@@ -267,11 +267,11 @@ export default function Screen() {
                         </div>
                     ))}
                 </div>
-                <div className="flex flex-grow justify-between flex-col bg-gradient-to-b from-gray-200 min-h">
+                <div className="flex flex-grow justify-between flex-col bg-gradient-to-b from-[#e0d2f0] to-white min-h">
                     <div className="flex h-10 items-start shadow-xl mb-4 bg-white w-full">
                         <p className="">Chat : ROOM ID</p>
                     </div>
-                    
+                   
                     <div className="flex flex-col overflow-y-auto items-start justify-start">
                         {Chat.map((name, index) => (
                             <div key={index} className="flex flex-grow flex-col w-full flex-wrap px-4 py-1">
@@ -280,7 +280,7 @@ export default function Screen() {
                                         {key === username ? (
                                             <div className="flex justify-end">
                                                 <p className="w-fit max-w-3xl border border-blue-200 rounded-md px-4  bg-gradient-to-b from-gray-400 to-gray-200 shadow-lg my-1">
-                                                    <div className="text-xs pt-1 font-bold text-blue-800">
+                                                    <div className="text-xs pt-1 font-bold text-[#46197a]">
                                                         You
                                                     </div>
                                                     {value.toString()}
@@ -290,7 +290,7 @@ export default function Screen() {
                                         ):(
                                             <div className="flex justify-start">
                                                 <p className="w-fit max-w-3xl border border-blue-200 rounded-md px-4  bg-gradient-to-b from-gray-400 to-gray-200 shadow-lg my-1">
-                                                    <div className="text-xs pt-1 font-bold text-blue-800">
+                                                    <div className="text-xs pt-1 font-bold text-[#46197a]">
                                                         {key}
                                                     </div>
                                                     {value.toString()}
@@ -307,9 +307,9 @@ export default function Screen() {
                     </div>
                     
 
-                    <div className="flex flex-row justify-start min-h-14 border border-gray-400 items-center">
+                    <div className="flex flex-row justify-start min-h-14 border border-gray-400 items-center bg-[#23004b]">
                         <input 
-                            className="w-5/6 mx-4 h-8 shadow-xl"
+                            className="w-5/6 mx-4 h-8 shadow-xl rounded-full px-4"
                             type="text"  
                             value={newText}
                             onChange={(event) => setNewText(event.target.value)}

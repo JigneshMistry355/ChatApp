@@ -33,10 +33,10 @@ export default function RegisterUser() {
     return (
       <>
 
-    <div className='fixed h-screen w-screen justify-center items-center bg-[url(src/assets/images/chat-image-background.jpg)] bg-cover opacity-80 blur-sm z-0'></div>
+    <div className='fixed h-screen w-screen justify-center items-center bg-[url(src/assets/images/register-now.jpg)] bg-cover opacity-80 blur-sm z-0'></div>
 
     <div className='flex flex-col h-screen'>
-      <div className='flex h-1/6 bg-gray-400/30 items-center justify-center z-10 shadow-2xl'>
+      <div className='flex h-1/6 bg-black/70 items-center justify-center z-10 shadow-2xl'>
         <Header />
       </div>
       <div className='flex flex-row flex-grow h-5/6'>
@@ -44,7 +44,7 @@ export default function RegisterUser() {
           
         </div>
         <div className='flex flex-grow justify-center items-center w-1/2 min-h-fit bg-black animate-slide-down'>
-          <div className=' flex flex-col w-fit h-1/2 min-h-fit py-4 rounded-xl items-center justify-between shadow-3xl border-2 bg-gradient-to-br from-white to-slate-400 opacity-90 z-10 animate-bounce-twice'>
+          <div className=' flex flex-col w-fit h-1/2 min-h-fit py-4 rounded-xl items-center justify-between shadow-3xl border-2 bg-gradient-to-br from-white to-slate-400 opacity-85 z-10 animate-bounce-twice'>
             <h1 className='text-center font-mono font-bold text-4xl bg-gradient-to-r from-orange-700 to-green-500 text-transparent bg-clip-text z-20'>Register</h1>
               <div className='flex flex-col m-4 px-4 justify-around  h-3/4'>
                 <div className='flex m-2'>
