@@ -27,6 +27,7 @@ class CustomW3WebSocket extends w3cwebsocket {
 
         this.onopen = () => {
             console.log("Connected to WebSocket server ... ");
+            if (this.preferred_language && this.username)
             this.send(
                 JSON.stringify({
                     sender : this.username,
@@ -42,19 +43,19 @@ class CustomW3WebSocket extends w3cwebsocket {
 // const  location  = useLocation();
 // const {username, preferred_language} = location.state || {}
 
-const getUrlParams = () => {
-    const url = new URL(window.location.href);
-    return {
-        username: url.searchParams.get("username"),
-        password: url.searchParams.get("password")
-    };
-};
+// const getUrlParams = () => {
+//     const url = new URL(window.location.href);
+//     return {
+//         username: url.searchParams.get("username"),
+//         password: url.searchParams.get("password")
+//     };
+// };
 
-// Use it anywhere
-const { username, password } = getUrlParams();
-// console.log(`ID: ${id}, Username: ${username}`);
+// // Use it anywhere
+// const { username, password } = getUrlParams();
 
-const client = new CustomW3WebSocket('ws://localhost:3000/', password, username, null);
+
+// const client = new CustomW3WebSocket('ws://localhost:3000/', password, username, null);
 
 export default function Screen() {
 
@@ -84,12 +85,32 @@ export default function Screen() {
     ];
 
     // const [client, setClient] = useState<CustomW3WebSocket>();
+    const client = useRef<CustomW3WebSocket | null>(null);
 
-    // useEffect(() => {
-    //     const newClient = new CustomW3WebSocket('ws://localhost:3000/', username, preferred_language, username)
-    //     setClient(newClient);
+    useEffect(() => {
+        const urlParams = new URLSearchParams(location.search);
+        const username = urlParams.get("username");
+        const password = urlParams.get("password");
+        if (username && password && !client.current) {
+            console.log("🔑 Logging in and establishing WebSocket connection...");
 
-    // },[])
+            // Create WebSocket connection only after login
+            client.current = new CustomW3WebSocket('ws://localhost:3000/', password, username, null);
+            // setClient(newClient);
+        } else {
+            console.log("❌ No login credentials found. WebSocket not connected.");
+        }
+
+        // Cleanup WebSocket connection on unmount
+        return () => {
+            if (client.current) {
+                console.log("🔴 Closing WebSocket connection...");
+                client.current.close();
+                client.current = null;
+            }
+        };
+
+    }, [location.search])
 
     
 
@@ -117,11 +138,11 @@ export default function Screen() {
         event?.preventDefault();
         if (newText.trim() !== "") {
             const message = JSON.stringify({sender:username, preferred_language: preferred_language, text:newText})
-            if (client?.readyState === WebSocket.OPEN){
+            if (client.current?.readyState === WebSocket.OPEN){
                 // Message sent as a JSON string 
                 console.log("\nMessage type ::: ", typeof message) //string
                 console.log("\n Message sent ::: ",message) // {sender:username, text:newText}
-                client.send(message);
+                client.current.send(message);
             }else{
                 console.log("Websocket is not open")
             }
@@ -152,8 +173,8 @@ export default function Screen() {
 
     useEffect(() => {
 
-        if (client)
-        client.onmessage = async (message) => {
+        if (client.current)
+        client.current.onmessage = async (message) => {
             try {
                 let messageText: string;
     
