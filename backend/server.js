@@ -47,10 +47,21 @@ app.post('/userdata', (req, res) => {
       error : "Server error"
     })
   }
-
-  
-  
 });
+
+function randomString(length) {
+  var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz'.split('');
+
+  if (! length) {
+      length = Math.floor(Math.random() * chars.length);
+  }
+
+  var str = '';
+  for (var i = 0; i < length; i++) {
+      str += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return str;
+}
 
 const handleTranslation = async (text) => {
   try {
@@ -68,124 +79,191 @@ const handleTranslation = async (text) => {
         return { error: "Translation failed" }; // Return an error message
       // alert(error.response.data.message)
   }
-  // navigate('/')
-  // console.log(`Data sent ${response}`);
-
 }
 
-// wss.setMaxListeners(20);
-
-// wss.on('connection', (ws) => {
-//     ws.on('message', (message) => {
-//         console.log('Received: %s', message.toString());
-//         wss.clients.forEach((client) => {
-
-//             // Keep two brackets separate for if condition
-//             // else it will not checked properly.
-//             // Sender will also receive message.
-//             if ((client != ws) && (client.readyState === WebSocket.OPEN)){
-//                 client.send(message.toString());
-//                 // client.send("response received!");
-//             }
-//         });
-//     });
-// });
 
 let language_List = [];           //  [ 'en', 'es' ]
 let sender_language_text;    // { en: 'Hello', es: 'Hola' }
+let client_list = [] 
 
+const rooms = {}
 
 wss.on('connection', (ws) => {
 
     console.log("\nConnection established.....")
     console.log(`\nNew client connected. Total clients: ${ wss.clients.size }`);
 
-    
-    
     const messageHandler = async (message) => {
-      // message is automatically converted/parsed to JSON object
 
+      // Store current message info {"en":"Hello"}
+      // Needs to be cleared after every message, hence initialized inside 
       sender_language_text = {};
+
+      // This object will be sent to the model (python file)
       let request_data = {
         languages : language_List,
         sender_message : sender_language_text
       }
-
+      console.log("Out of try ..... ")
       try {
+
         const messageStr = typeof message === "string" ? message : message.toString(); 
 
         const parsedMessage = JSON.parse(messageStr);
 
-        ws.sender = parsedMessage.sender
-        ws.preferred_language = parsedMessage.preferred_language
-        console.log(`\n✅ Sender of message :  Username = ${ws.sender}, Language = ${ws.preferred_language}`);
+        const { type, room, sender, preferred_language, text } = parsedMessage;
 
-        if (!language_List.includes(ws.preferred_language)) {
-          language_List.push(ws.preferred_language)
+        console.log("Type ----------->",type);
+        console.log("room ----------->",room);
+        console.log("sender ----------->",sender);
+        console.log("preferred_language ----------->",preferred_language);
+        console.log("text ----------->",text);
+
+        if (type === "join" && room) {
+            ws.id = randomString(10);
+            ws.room = room;
+            ws.sender = sender;
+            ws.preferred_language = preferred_language;
+
+            if (!client_list.includes(ws.sender)) {
+              client_list.push(ws.sender);
+            }
+
+            if (!language_List.includes(ws.preferred_language)) {
+              language_List.push(ws.preferred_language);
+            }
+            console.log("\nLanguage list update .............", language_List);
+            
+            if (!rooms[room]) {
+              rooms[room] = new Set();
+            }else{
+              console.log(`${rooms[room]} already exists !!`)
+            }
+
+            rooms[room].add(ws);
+            console.log(`\n✅ New client :  Username = ${ws.sender}, Language = ${ws.preferred_language} Joined room : ${room}`);
+
+            console.log("\nRooms ----------------------------> ",rooms)
+
+            rooms[room].forEach((client) => {
+              if (client.readyState === WebSocket.OPEN) {
+                client.send(JSON.stringify({
+                  message: `🟢 ${ws.sender} joined room ${room}`,
+                  room: room,
+                  all_clients: [...rooms[room]].map(c => c.sender),
+                }));
+              }
+            });
+            // ws.send(JSON.stringify({message : `Joined room ${room}`, room: room, all_clients:client_list}));
+        }
+        if (type === "message" && ws.room && text) {
+
+            if (!sender_language_text[ws.sender]){
+              sender_language_text[ws.preferred_language] = {};
+            }
+            sender_language_text[ws.preferred_language] = parsedMessage.text;
+
+             try {
+                console.log("🛠 Calling handleTranslation()...");
+                const translation = await handleTranslation(request_data);
+                console.log("✅ Translation success:", translation);
+              } 
+              catch (error) {
+                  console.error("❌ Translation failed:", error);
+              }
+
+            wss.clients.forEach((client) => {
+
+              console.log(`\nSending reply to client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
+      
+              if ((client !== ws) && (client.readyState === WebSocket.OPEN) && client.room === room) {
+      
+                // console.log("Sending message type",typeof translation) // object
+                console.log("\nTranslated text -----------> ",translation[client.preferred_language])
+    
+                console.log(`Sending reply to :  Username: ${client.sender}, Language: ${client.preferred_language}`);
+    
+                parsedMessage.text = translation[client.preferred_language];
+      
+                client.send(JSON.stringify(parsedMessage)); // message sent as object
+      
+                console.log(`\nMessage was sent to : ${JSON.stringify(ws)}`);
+                console.log("\n\n\n\n\n\n")
+              }
+            });
+
         }
 
-        console.log("Language list update .............", language_List);
+          // ws.sender = parsedMessage.sender
+          // ws.preferred_language = parsedMessage.preferred_language
+          // console.log(`\n✅ Sender of message :  Username = ${ws.sender}, Language = ${ws.preferred_language}`);
 
-        if (parsedMessage.text === 'connection_request'){
-          return;
-        }
+        // if (!language_List.includes(ws.preferred_language)) {
+        //   language_List.push(ws.preferred_language)
+        // }
+
+        // console.log("\nLanguage list update .............", language_List);
+
+        // if (parsedMessage.text === 'connection_request'){
+        //   return;
+        // }
 
         // console.log("\nType of message received ____________ :",typeof parsedMessage); // object
 
-        console.log('\nReceived message object from client  ....   : %s', parsedMessage); 
+        // console.log('\nReceived message object from client  ....   : %s', parsedMessage); 
         //   { 
         //      sender: 'Jignesh', 
         //      preferred_language: 'en', 
         //      text: 'Hello' 
         //   }
 
-        console.log(`\nBroadcasting to ${wss.clients.size -1} other clients`);
+        // console.log(`\nBroadcasting to ${wss.clients.size -1} other clients`);
 
-        console.log("\nWaiting for translation model to translate ..... ")
+        // console.log("\nWaiting for translation model to translate ..... ")
 
-        console.log("\nmesage text -------->", parsedMessage.text)
-        console.log("\nType of mesage text -------->",typeof parsedMessage.text)
+        // console.log("\nmesage text -------->", parsedMessage.text)
+        // console.log("\nType of mesage text -------->",typeof parsedMessage.text)
 
-        console.log("111111  ABABABAB -----> ", sender_language_text)
-        console.log(sender_language_text[ws.sender])
+        // console.log("111111  ABABABAB -----> ", sender_language_text)
+        // console.log(sender_language_text[ws.sender])
 
-        if (!sender_language_text[ws.sender]){
-          sender_language_text[ws.preferred_language] = {}
-        }
-        sender_language_text[ws.preferred_language] = parsedMessage.text
+        // if (!sender_language_text[ws.sender]){
+        //   sender_language_text[ws.preferred_language] = {}
+        // }
+        // sender_language_text[ws.preferred_language] = parsedMessage.text
         
 
-        console.log("22222  ABABABAB -----> ", sender_language_text)
+        // console.log("22222  ABABABAB -----> ", sender_language_text)
         
-        const translation = await handleTranslation(request_data);
+        // const translation = await handleTranslation(request_data);
 
-        console.log("\nTranslation result:", translation);
+        // console.log("\nTranslation result:", translation);
 
-        console.log("\nSending translated data to all ====> ",typeof translation);
+        // console.log("\nSending translated data to all ====> ",typeof translation);
 
         // console.log("\nTarget language list ------>", sender_language_text)
 
-        console.log("\n\n\nFinal data for Model ............................", request_data)
+        // console.log("\n\n\nFinal data for Model ............................", request_data)
 
-        wss.clients.forEach((client) => {
+        // wss.clients.forEach((client) => {
 
-          console.log(`\nSending reply to client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
+        //   console.log(`\nSending reply to client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
   
-          if ((client !== ws) && (client.readyState === WebSocket.OPEN)) {
+        //   if ((client !== ws) && (client.readyState === WebSocket.OPEN)) {
   
-            // console.log("Sending message type",typeof translation) // object
-            console.log("\nTranslated text -----------> ",translation[client.preferred_language])
+        //     // console.log("Sending message type",typeof translation) // object
+        //     console.log("\nTranslated text -----------> ",translation[client.preferred_language])
 
-            console.log(`Sending reply to :  Username: ${client.sender}, Language: ${client.preferred_language}`);
+        //     console.log(`Sending reply to :  Username: ${client.sender}, Language: ${client.preferred_language}`);
 
-            parsedMessage.text = translation[client.preferred_language];
+        //     parsedMessage.text = translation[client.preferred_language];
   
-            client.send(JSON.stringify(parsedMessage)); // message sent as object
+        //     client.send(JSON.stringify(parsedMessage)); // message sent as object
   
-            console.log(`\nMessage was sent to : ${JSON.stringify(ws)}`);
-            console.log("\n\n\n\n\n\n")
-          }
-        });
+        //     console.log(`\nMessage was sent to : ${JSON.stringify(ws)}`);
+        //     console.log("\n\n\n\n\n\n")
+        //   }
+        // });
 
       }catch(error){
         console.error("Error parsing message:", error);
@@ -197,6 +275,23 @@ wss.on('connection', (ws) => {
     // Remove the listener when the connection is closed
     ws.on('close', () => {
       ws.removeListener('message', messageHandler);
+      if (ws.room && rooms[ws.room]) {
+        rooms[ws.room].delete(ws);
+        
+        if (rooms[ws.room].size === 0) {
+          delete rooms[ws.room]
+        }
+      }
+      const leaveMessage = {
+        message: `${ws.sender || "A user"} left room ${ws.room || "unknown room"}`,
+        all_clients: Object.keys(rooms).reduce((acc, room) => {
+            acc[room] = [...rooms[room]].map(client => client.sender || "Unknown");
+            return acc;
+        }, {})
+      };
+
+      console.log(JSON.stringify(leaveMessage));
+     
       console.log("\n############################\n Connection closed \n######################################")
     });
   });
