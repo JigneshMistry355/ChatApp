@@ -83,7 +83,7 @@ const handleTranslation = async (text) => {
 
 
 let language_List = [];           //  [ 'en', 'es' ]
-let sender_language_text;    // { en: 'Hello', es: 'Hola' }
+// const sender_language_text;    // { en: 'Hello', es: 'Hola' }
 let client_list = [] 
 
 const rooms = {}
@@ -95,57 +95,69 @@ wss.on('connection', (ws) => {
 
     const messageHandler = async (message) => {
 
-      // Store current message info {"en":"Hello"}
-      // Needs to be cleared after every message, hence initialized inside 
-      sender_language_text = {};
-
-      // This object will be sent to the model (python file)
-      let request_data = {
-        languages : language_List,
-        sender_message : sender_language_text
-      }
+          
      
       try {
 
+        // If the data comes in the form of object, then convert it to string
         const messageStr = typeof message === "string" ? message : message.toString(); 
 
+        // parse the string format data to object
         const parsedMessage = JSON.parse(messageStr);
 
+        // extract value of each property of object
         const { type, room, sender, preferred_language, text } = parsedMessage;
 
-        console.log("Type ----------->",type);
-        console.log("room ----------->",room);
-        console.log("sender ----------->",sender);
+        console.log("Type ----------->",type);  // join / message
+        console.log("room ----------->",room);  
+        console.log("sender ----------->",sender); 
         console.log("preferred_language ----------->",preferred_language);
         console.log("text ----------->",text);
 
         if (type === "join" && room) {
+
+            // assigning extracted values to current instance of websocket
             ws.id = randomString(10);
             ws.room = room;
             ws.sender = sender;
             ws.preferred_language = preferred_language;
+           
 
-            if (!client_list.includes(ws.sender)) {
-              client_list.push(ws.sender);
-            }
+            // if (!client_list.includes(ws.sender)) {
+            //   client_list.push(ws.sender);
+            // }
 
-            if (!language_List.includes(ws.preferred_language)) {
-              language_List.push(ws.preferred_language);
-            }
-            console.log("\nLanguage list update .............", language_List);
+
+            // if (!language_List.includes(ws.preferred_language)) {
+            //   language_List.push(ws.preferred_language);
+            // }
+            
             
             if (!rooms[room]) {
-              rooms[room] = new Set();
+              rooms[room] = {
+                clients : new Set(),
+                language_List: [],
+              }
             }else{
               console.log(`${rooms[room]} already exists !!`)
             }
 
-            rooms[room].add(ws);
+            if (!rooms[room].clients.has(ws.sender)) {
+              rooms[room].clients.add(ws);
+            }
+            
+            if (!rooms[room].language_List.includes(ws.preferred_language)) {
+              rooms[room].language_List.push(ws.preferred_language);
+            }
+
+            console.log("\nLanguage list update .............", rooms[room].language_List);
+
+            // rooms[room].add(ws);
             console.log(`\n✅ New client :  Username = ${ws.sender}, Language = ${ws.preferred_language} Joined room : ${room}`);
 
-            console.log("\nRooms ----------------------------> ",rooms)
+            console.log("\nRooms ----------------------------> ",rooms[room])
 
-            rooms[room].forEach((client) => {
+            rooms[room].clients.forEach((client) => {
               console.log("sending ack to sender")
               if ((client.readyState === WebSocket.OPEN && (client.room === ws.room))) {
                   console.log("Entered inside for -------------------")
@@ -153,7 +165,7 @@ wss.on('connection', (ws) => {
                   type : "join",
                   message: `🟢 ${ws.sender} joined room ${room}`,
                   room: room,
-                  all_clients: [...rooms[room]].map(c => c.sender),
+                  all_clients: [...rooms[room].clients].map(c => c.sender),
                 } ));
               }
               console.log("Data sent -------------------")
@@ -162,7 +174,7 @@ wss.on('connection', (ws) => {
             const joinMessage = {
               message: `${ws.sender || "A user"} joined room ${ws.room || "unknown room"}`,
               all_clients: Object.keys(rooms).reduce((acc, room) => {
-              acc[room] = [...rooms[room]].map(client => client.sender || "Unknown");
+              acc[room] = [...rooms[room].clients].map(client => client.sender || "Unknown");
               return acc;
             }, {})
             }
@@ -175,19 +187,36 @@ wss.on('connection', (ws) => {
             // ws.send(JSON.stringify({message : `Joined room ${room}`, room: room, all_clients:client_list}));
         }
 
-        else if (type === "message" && ws.room && text) {
+         if (type === "message" && ws.room && text) {
+
+          // Store current message info {"en":"Hello"}
+          // Needs to be cleared after every message, hence initialized inside 
+          const sender_language_text = {}; // => {"en":"Hello"}
+          
+
+          // This object will be sent to the model (python file)
+          const request_data = {
+            languages : rooms[ws.room].language_List, 
+            sender_message : sender_language_text
+          }
+
 
             if (!sender_language_text[ws.sender]){
               sender_language_text[ws.preferred_language] = {};
             }
             sender_language_text[ws.preferred_language] = parsedMessage.text;
+            
            
              try {
                 console.log("🛠 Calling handleTranslation()...");
                 const translation = await handleTranslation(request_data);
+                
+                // adding the preferred language and text of sender to object with translated text
+                // if there are two or more people with same language preference, then no need for translation.
+                translation[ws.preferred_language] = parsedMessage.text
                 console.log("✅ Translation success:", translation);
 
-                wss.clients.forEach((client) => {
+                rooms[ws.room].clients.forEach((client) => {
 
                   console.log(`\nSending reply to client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
 
@@ -300,16 +329,16 @@ wss.on('connection', (ws) => {
     ws.on('close', () => {
       ws.removeListener('message', messageHandler);
       if (ws.room && rooms[ws.room]) {
-        rooms[ws.room].delete(ws);
+        rooms[ws.room].clients.delete(ws);
         
-        if (rooms[ws.room].size === 0) {
+        if (rooms[ws.room].clients.size === 0) {
           delete rooms[ws.room]
         }
       }
       const leaveMessage = {
         message: `${ws.sender || "A user"} left room ${ws.room || "unknown room"}`,
         all_clients: Object.keys(rooms).reduce((acc, room) => {
-            acc[room] = [...rooms[room]].map(client => client.sender || "Unknown");
+            acc[room] = [...rooms[room].clients].map(client => client.sender || "Unknown");
             return acc;
         }, {})
       };
