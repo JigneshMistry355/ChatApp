@@ -114,6 +114,57 @@ export default function Screen() {
             // client.current.onopen = () => console.log("🟢 WebSocket Connected");
             client.current.onclose = () => console.log("🔴 WebSocket Disconnected");
             client.current.onerror = (err) => console.error("⚠️ WebSocket Error:", err);
+            client.current.onmessage = async (message) => {
+                try {
+                    let messageText: string;
+        
+                    if (typeof message.data === 'string') {
+                        // If it's already a string, use it directly
+                        messageText = message.data;
+                    } else if (message.data instanceof ArrayBuffer) {
+                        // Convert ArrayBuffer to string
+                        messageText = new TextDecoder().decode(message.data);
+                    } else if (message.data instanceof Blob) {
+                        // Convert Blob to string
+                        messageText = await message.data.text();
+                    } else {
+                        throw new Error('Unsupported message type');
+                    }
+    
+                    // {"message":"Tanay joined room 4321","all_clients":{"1234":["Sahil","Jignesh"],"4321":["Tanay"]}}
+        
+                    console.log('Received message:', messageText); // Received message: {"sender":"ABC","text":"ddjdfgjh"}
+        
+                    console.log('Received message:', typeof messageText); // string
+        
+                    const parsedMessage = JSON.parse(messageText); // converted to object
+        
+                    console.log('Parsed message:', parsedMessage);
+    
+                    console.log("Connection Acknowledgement:")
+                    console.log(parsedMessage.message, parsedMessage.all_clients)
+
+                    const { type, room } = parsedMessage;
+
+                    if (type === "join") {
+                        setRoomID(room);
+                        set_client_list(parsedMessage.all_clients);
+                    }
+    
+        
+                    console.log(typeof(parsedMessage.text))
+                    // console.log(result)
+                    // alert(parsedMessage.message);
+                    setReceived(parsedMessage.text);
+                    setSender(parsedMessage.sender);
+                    
+                    
+    
+                } catch (error) {
+                    console.error('Failed to process WebSocket message:', error);
+                }
+                
+                };
         }else {
             console.log("⚠️ WebSocket already connected.");
         }
@@ -136,13 +187,7 @@ export default function Screen() {
         //     }
         // };
 
-    }, [isConnected])
-
-    
-
-    
-    
-   
+    }, [isConnected]);
     
     const username:string | undefined = data?.toString() ?? 'anonymous';
     
@@ -176,50 +221,52 @@ export default function Screen() {
     }
 
     useEffect(() => {
-       
-    },[client_list])
 
-    useEffect(() => {
+        // if (client.current) {
+        // client.current.onmessage = async (message) => {
+        //     try {
+        //         let messageText: string;
+    
+        //         if (typeof message.data === 'string') {
+        //             // If it's already a string, use it directly
+        //             messageText = message.data;
+        //         } else if (message.data instanceof ArrayBuffer) {
+        //             // Convert ArrayBuffer to string
+        //             messageText = new TextDecoder().decode(message.data);
+        //         } else if (message.data instanceof Blob) {
+        //             // Convert Blob to string
+        //             messageText = await message.data.text();
+        //         } else {
+        //             throw new Error('Unsupported message type');
+        //         }
 
-        if (client.current)
-        client.current.onmessage = async (message) => {
-            try {
-                let messageText: string;
+        //         // {"message":"Tanay joined room 4321","all_clients":{"1234":["Sahil","Jignesh"],"4321":["Tanay"]}}
     
-                if (typeof message.data === 'string') {
-                    // If it's already a string, use it directly
-                    messageText = message.data;
-                } else if (message.data instanceof ArrayBuffer) {
-                    // Convert ArrayBuffer to string
-                    messageText = new TextDecoder().decode(message.data);
-                } else if (message.data instanceof Blob) {
-                    // Convert Blob to string
-                    messageText = await message.data.text();
-                } else {
-                    throw new Error('Unsupported message type');
-                }
+        //         console.log('Received message:', messageText); // Received message: {"sender":"ABC","text":"ddjdfgjh"}
     
-                console.log('Received message:', messageText); // Received message: {"sender":"ABC","text":"ddjdfgjh"}
+        //         console.log('Received message:', typeof messageText); // string
     
-                console.log('Received message:', typeof messageText); // string
+        //         const parsedMessage = JSON.parse(messageText); // converted to object
     
-                const parsedMessage = JSON.parse(messageText); // converted to object
-    
-                console.log('Parsed message:', parsedMessage);
+        //         console.log('Parsed message:', parsedMessage);
+
+        //         console.log("Connection Acknowledgement:")
+        //         console.log(parsedMessage.message, parsedMessage.all_clients)
 
     
-                console.log(typeof(parsedMessage.text))
-                // console.log(result)
-                // alert(parsedMessage.message);
-                setReceived(parsedMessage.text);
-                setSender(parsedMessage.sender);
-                setRoomID(parsedMessage.room);
-                set_client_list(parsedMessage.all_clients);
+        //         console.log(typeof(parsedMessage.text))
+        //         // console.log(result)
+        //         // alert(parsedMessage.message);
+        //         setReceived(parsedMessage.text);
+        //         setSender(parsedMessage.sender);
+        //         setRoomID(parsedMessage.room);
+        //         set_client_list(parsedMessage.all_clients);
 
-            } catch (error) {
-                console.error('Failed to process WebSocket message:', error);
-            }
-        };
+        //     } catch (error) {
+        //         console.error('Failed to process WebSocket message:', error);
+        //     }
+        // }
+        // };
     },[]);
 
     useEffect(() => {
@@ -312,23 +359,35 @@ export default function Screen() {
                                 {Object.entries(name).map(([key, value]) => (
                                     <div key={key}>
                                         {key === username ? (
-                                            <div className="flex justify-end">
-                                                <p className="w-fit max-w-3xl border border-blue-200 rounded-md px-4  bg-gradient-to-b from-gray-400 to-gray-200 shadow-lg my-1">
-                                                    <div className="text-xs pt-1 font-bold text-[#46197a]">
-                                                        You
-                                                    </div>
+                                            <div className="flex justify-start">
+                                            <div className="w-fit max-w-3xl border border-blue-200 rounded-md px-4 bg-gradient-to-b from-gray-400 to-gray-200 shadow-lg my-1">
+                                                <div className="text-xs pt-1 font-bold text-[#46197a]">You
+                                                    
+                                                </div>
+                                                <p>
                                                     {value.toString()}
                                                 </p>
                                             </div>
+                                        </div>
                                             
                                         ):(
+                                            // <div className="flex justify-start">
+                                            //     <p className="w-fit max-w-3xl border border-blue-200 rounded-md px-4  bg-gradient-to-b from-gray-400 to-gray-200 shadow-lg my-1">
+                                            //         <div className="text-xs pt-1 font-bold text-[#46197a]">
+                                            //             {key}
+                                            //         </div>
+                                            //         {value.toString()}
+                                            //     </p>
+                                            // </div>
                                             <div className="flex justify-start">
-                                                <p className="w-fit max-w-3xl border border-blue-200 rounded-md px-4  bg-gradient-to-b from-gray-400 to-gray-200 shadow-lg my-1">
+                                                <div className="w-fit max-w-3xl border border-blue-200 rounded-md px-4 bg-gradient-to-b from-gray-400 to-gray-200 shadow-lg my-1">
                                                     <div className="text-xs pt-1 font-bold text-[#46197a]">
                                                         {key}
                                                     </div>
-                                                    {value.toString()}
-                                                </p>
+                                                    <p>
+                                                        {value.toString()}
+                                                    </p>
+                                                </div>
                                             </div>
                                             
                                         )}
@@ -364,7 +423,7 @@ export default function Screen() {
                     ):(
                         <div className="flex flex-col w-full p-4">
                              <div className="flex flex-col w-full my-4">
-                                <label>Create a ROOM ID</label>
+                                <label>Create OR Join a ROOM with an ID</label>
                                 <input 
                                 className="border-2"
                                     type="text" 

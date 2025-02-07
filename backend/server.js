@@ -104,7 +104,7 @@ wss.on('connection', (ws) => {
         languages : language_List,
         sender_message : sender_language_text
       }
-      console.log("Out of try ..... ")
+     
       try {
 
         const messageStr = typeof message === "string" ? message : message.toString(); 
@@ -146,52 +146,76 @@ wss.on('connection', (ws) => {
             console.log("\nRooms ----------------------------> ",rooms)
 
             rooms[room].forEach((client) => {
-              if (client.readyState === WebSocket.OPEN) {
-                client.send(JSON.stringify({
+              console.log("sending ack to sender")
+              if ((client.readyState === WebSocket.OPEN && (client.room === ws.room))) {
+                  console.log("Entered inside for -------------------")
+                  client.send(JSON.stringify({
+                  type : "join",
                   message: `🟢 ${ws.sender} joined room ${room}`,
                   room: room,
                   all_clients: [...rooms[room]].map(c => c.sender),
-                }));
+                } ));
               }
+              console.log("Data sent -------------------")
             });
+            
+            const joinMessage = {
+              message: `${ws.sender || "A user"} joined room ${ws.room || "unknown room"}`,
+              all_clients: Object.keys(rooms).reduce((acc, room) => {
+              acc[room] = [...rooms[room]].map(client => client.sender || "Unknown");
+              return acc;
+            }, {})
+            }
+            console.log(JSON.stringify(joinMessage));
+            // wss.clients.forEach((client) => {
+            //   if ((client.readyState === WebSocket.OPEN) && (client.room === ws.room)){
+            //     client.send(JSON.stringify({message : `Joined room ${room}`, room: room, all_clients:client_list}));
+            //   }
+            // })
             // ws.send(JSON.stringify({message : `Joined room ${room}`, room: room, all_clients:client_list}));
         }
-        if (type === "message" && ws.room && text) {
+
+        else if (type === "message" && ws.room && text) {
 
             if (!sender_language_text[ws.sender]){
               sender_language_text[ws.preferred_language] = {};
             }
             sender_language_text[ws.preferred_language] = parsedMessage.text;
-
+           
              try {
                 console.log("🛠 Calling handleTranslation()...");
                 const translation = await handleTranslation(request_data);
                 console.log("✅ Translation success:", translation);
+
+                wss.clients.forEach((client) => {
+
+                  console.log(`\nSending reply to client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
+
+                  console.log("#########################################################################")
+                  console.log("Client Room : ", client.room);
+                  console.log("ws room : ", ws.room);
+          
+                  if ((client !== ws) && (client.readyState === WebSocket.OPEN) && (client.room === ws.room)) {
+          
+                    // console.log("Sending message type",typeof translation) // object
+                    console.log("\nTranslated text -----------> ",translation[client.preferred_language])
+        
+                    console.log(`Sending reply to :  Username: ${client.sender}, Language: ${client.preferred_language} on room ${client.room}`);
+        
+                    parsedMessage.text = translation[client.preferred_language];
+          
+                    client.send(JSON.stringify(parsedMessage)); // message sent as object
+                    
+          
+                    // console.log(`\nMessage was sent to : ${JSON.stringify(ws)}`);
+                    console.log("\n\n\n\n\n\n")
+                  }
+                });
+
               } 
               catch (error) {
                   console.error("❌ Translation failed:", error);
               }
-
-            wss.clients.forEach((client) => {
-
-              console.log(`\nSending reply to client  ......: ${client === ws ? 'Sender' : 'Other Client'}`);
-      
-              if ((client !== ws) && (client.readyState === WebSocket.OPEN) && client.room === room) {
-      
-                // console.log("Sending message type",typeof translation) // object
-                console.log("\nTranslated text -----------> ",translation[client.preferred_language])
-    
-                console.log(`Sending reply to :  Username: ${client.sender}, Language: ${client.preferred_language}`);
-    
-                parsedMessage.text = translation[client.preferred_language];
-      
-                client.send(JSON.stringify(parsedMessage)); // message sent as object
-      
-                console.log(`\nMessage was sent to : ${JSON.stringify(ws)}`);
-                console.log("\n\n\n\n\n\n")
-              }
-            });
-
         }
 
           // ws.sender = parsedMessage.sender
