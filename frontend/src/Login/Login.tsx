@@ -19,7 +19,7 @@ function Login() {
   }
     
   return (
-    <div className='flex h-screen w-screen justify-center items-center bg-[url(src/assets/images/Homebg.avif)] bg-cover animate-slide-down blur-none z-0'>
+    <div className='flex h-screen w-screen justify-center items-center bg-[url(/public/assets/images/Homebg.avif)] bg-cover animate-slide-down blur-none z-0'>
       <div className='flex flex-col p-7 bg-white h-72 w-fit rounded-md items-center justify-center shadow-2xl shadow-gray-800 animate-bounce-twice z-10 opacity-90'>
         <h1 className='text-center font-mono font-bold text-2xl'>Login</h1>
           <div className='flex flex-col m-4 px-4 z-30'>

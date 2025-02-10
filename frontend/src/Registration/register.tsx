@@ -33,7 +33,7 @@ export default function RegisterUser() {
     return (
       <>
 
-    <div className='fixed h-screen w-screen justify-center items-center bg-[url(src/assets/images/register-now.jpg)] bg-cover opacity-80 blur-sm z-0'></div>
+    <div className='fixed h-screen w-screen justify-center items-center bg-[url(/public/assets/images/register-now.jpg)] bg-cover opacity-80 blur-sm z-0'></div>
 
     <div className='flex flex-col h-screen'>
       <div className='flex h-1/6 bg-black/70 items-center justify-center z-10 shadow-2xl'>
