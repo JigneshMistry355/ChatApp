@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Header from '../Header/header'
@@ -26,7 +26,7 @@ export default function RegisterUser() {
             console.log(error.response.data.message)
             alert(error.response.data.message)
         })
-        // navigate('/')
+        navigate('/')
         // console.log(`Data sent ${response}`);
     }
 
