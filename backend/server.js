@@ -357,3 +357,5 @@ server.listen(port, () => {
 app.listen(3001, () => {
   console.log("API running on 3001")
 })
+
+module.exports = app;
