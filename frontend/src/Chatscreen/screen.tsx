@@ -111,6 +111,9 @@ export default function Screen() {
             client.current = new CustomW3WebSocket('ws://localhost:3000/', password, username, null, "join", roomID);
             // setClient(newClient);
 
+            console.log("#############################################################")
+            console.log(client.current.username);
+
             // client.current.onopen = () => console.log("🟢 WebSocket Connected");
             client.current.onclose = () => console.log("🔴 WebSocket Disconnected");
             client.current.onerror = (err) => console.error("⚠️ WebSocket Error:", err);
@@ -325,7 +328,22 @@ export default function Screen() {
                         <div className="flex flex-col h-5/6 bg-gradient-to-b from-[#150f77] via-[#191392] to-[#9e28ec]">
                         {client_list?.map((names, index) => (
                             <div key={index} className="flex items-center h-11 mx-2 my-[1px] bg-gradient-to-br bg-[#5b54d4] px-4 shadow-md border-separate hover:cursor-pointer hover:from-[#150f77] hover:via-[#191392e7] hover:to-[#9d28ece0] hover:bg-[#554ed4] -skew-x-3">
-                                <h5 className="text-white">{names}</h5>
+                                {names === data ? (
+                                    <div className="flex flex-row w-full justify-between ">
+                                        <div className="flex w-2/3">
+                                            <h5 className="text-white text-left">{names} 🟢 </h5>
+                                        </div>
+                                        <div className="flex w-1/3 justify-end">
+                                            <h5 className="flex text-white text-right">{preferred_language}</h5>
+                                        </div>
+                                        
+                                    </div>
+                                    
+                                ) : (
+                                    <h5 className="text-white">{names}</h5>
+                                ) 
+                                }
+                                
                             </div>
                         ))}
                         </div>

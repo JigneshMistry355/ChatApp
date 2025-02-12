@@ -1,6 +1,16 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
+import { useDispatch, useSelector } from "react-redux";
+import { RootState, AppDispatch } from "../store";
+import { login, logout } from "../reducers";
+
+interface User {
+  fullname: string;
+  username : string,
+  email : string,
+  preferred_language: string,
+}
 
 function Login() {
 
@@ -10,6 +20,10 @@ function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('') 
 
+  const dispatch: AppDispatch = useDispatch();
+  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+  const user = useSelector((state: RootState) => state.auth.user);
+
   const handleLogin = async () => {
     try {
       const response = await axios.post('http://localhost:3001/loginValidation', {
@@ -18,6 +32,15 @@ function Login() {
       });
       console.log(response.data);
       console.log(response.status);
+
+      const user: User = {
+        fullname: response.data.fullname,
+        username: response.data.username,
+        email: response.data.email,
+        preferred_language: response.data.preferred_language,
+      }
+
+      dispatch(login(user));
 
       if (response.status === 200) {
         navigate(`/screen?username=${username}&preferred_language=${response.data.preferred_language}`);

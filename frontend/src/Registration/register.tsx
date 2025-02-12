@@ -16,6 +16,7 @@ export default function RegisterUser() {
 
     const handleLogin = async () => {
         await axios.post('http://localhost:3001/userdata', {
+            fullname: fullname,
             username : username,
             email : email,
             preferred_language: preferred_language,

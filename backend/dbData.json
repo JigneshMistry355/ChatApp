@@ -1,23 +1,10 @@
 [
   {
-    "user_id": "qh441TWnBH",
+    "user_id": "xklbXceXEK",
+    "fullname": "Jignesh Mistry",
     "username": "Jignesh",
     "preferred_language": "es",
-    "email": "Jignesh@gmail.com",
+    "email": "jignesh@gmail.com",
     "password": "123"
-  },
-  {
-    "user_id": "g0hukGm3bf",
-    "username": "Sahil",
-    "preferred_language": "en",
-    "email": "Sahil@gmail.com",
-    "password": "345"
-  },
-  {
-    "user_id": "vTu9kJJPiT",
-    "username": "Tanay",
-    "preferred_language": "hi",
-    "email": "tanay@gmail.com",
-    "password": "234"
   }
 ]

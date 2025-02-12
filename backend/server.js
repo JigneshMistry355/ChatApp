@@ -119,7 +119,7 @@ app.post('/loginValidation', async (req, res) => {
 
       const loginSuccess = users.some(user => user.username === userData.username && user.password === userData.password);
       if (loginSuccess) {
-        return res.status(200).send({message : "Login Successful", preferred_language: current_user.preferred_language});
+        return res.status(200).send({message : "Login Successful", fullname: current_user.fullname, username: current_user.username, email: current_user.email, preferred_language: current_user.preferred_language});
       }else{
         return res.status(400).send({message : "Password is wrong"});
       }
