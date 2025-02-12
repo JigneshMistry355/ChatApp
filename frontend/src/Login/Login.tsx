@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import axios from 'axios'
 
 function Login() {
 
@@ -9,13 +10,31 @@ function Login() {
   const [username, setUsername] = useState('')
   const [password, setPassword] = useState('') 
 
-  const handleLogin = () => {
-    if (username && password){
-      navigate(`/screen?username=${username}&password=${password}`);
+  const handleLogin = async () => {
+    try {
+      const response = await axios.post('http://localhost:3001/loginValidation', {
+        username : username,
+        password : password,
+      });
+      console.log(response.data);
+      console.log(response.status);
+
+      if (response.status === 200) {
+        navigate(`/screen?username=${username}&preferred_language=${response.data.preferred_language}`);
+      }
+    }catch(error:any) {
+      console.error("Error",error.response.data.message);
+      alert(error.response.data.message)
     }
-    else {
-      alert("Fill the details")
-    }
+   
+      
+  
+    // if (username && password){
+    //   navigate(`/screen?username=${username}&password=${password}`);
+    // }
+    // else {
+    //   alert("Fill the details")
+    // }
   }
     
   return (

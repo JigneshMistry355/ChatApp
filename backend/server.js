@@ -6,6 +6,10 @@ const { error } = require('console');
 const axios = require('axios');
 const { text } = require('stream/consumers');
 // const MongoClient = require('mongodb').MongoClient
+const fs = require('fs');
+const {promisify} = require('util');
+const readFileAsync = promisify(fs.readFile);
+const writeFileAsync = promisify(fs.writeFile);
 
 const app = express();
 const server = http.createServer(app);
@@ -15,39 +19,124 @@ app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({extended:true}))
 
-const userDB = {
 
-}
+// ####### Data coming from register page ##############
 
-app.post('/userdata', (req, res) => {
+// username : username,
+// email : email,
+// password : password,
+// confirmPassword : confirmPassword
+
+
+app.post('/userdata', async (req, res) => {
+
   try{
-    const userData = req.body;
-    if (userData.password !== userData.confirmPassword){
-      return res.status(400).send({
-        message : "Passwords Mismatched"
-      })
-    }
-    // console.log(userData)
-    res.status(200).send({
-      message : "New user data received",
-      data : userData
-    });
-    let id = 101
-    
-    const dbData = {
-      username : userData.username,
-      email : userData.email,
-      password : userData.password
-  }
-  userDB[id] = dbData
 
-  console.log(userDB)
+      const userData = req.body;
+      let users = []
+
+      if (userData.password !== userData.confirmPassword){
+        return res.status(400).send({
+          message : "Passwords Mismatched"
+        })
+      }
+
+      try {
+        const fileData = await readFileAsync('dbData.json', 'utf-8');
+        users = fileData.trim() ? JSON.parse(fileData) : [] // if fileData then parse the string to object else return empty 
+      }catch(error) {
+        if (error.code !== 'ENOENT') {
+          users = [];
+        }else {
+          console.log("Error reading file", error);
+          return res.status(500).send({error : "Server error"});
+        }
+      }
+
+
+      const userExists = users.some(user => user.email === userData.email && user.username === userData.username);
+      if (userExists) {
+        return res.status(400).send({message : "User already exists"})
+      }
+
+      const usernameExists = users.some(user => user.username === userData.username);
+      if (usernameExists){
+        return res.status(400).send({message : "Username already exists"});
+      }
+      
+      const newUser = {
+        user_id : randomString(10),
+        fullname : userData.fullname,
+        username : userData.username,
+        preferred_language: userData.preferred_language,
+        email : userData.email,
+        password : userData.password
+      }
+
+      users.push(newUser);
+
+      await writeFileAsync('dbData.json', JSON.stringify(users, null, 2));
+      console.log(`User data : ${newUser} saved!`)
+
+      return res.status(200).send({
+        message : "New user data received",
+        data : newUser
+      });
+
   }catch(error){
+    console.error("Error:", error);
     res.status(500).send({
       error : "Server error"
     })
   }
 });
+
+app.post('/loginValidation', async (req, res) => {
+
+  try{
+
+      const userData = req.body;
+      let users = []
+      
+      try {
+        const fileData = await readFileAsync('dbData.json', 'utf-8');
+        users = fileData.trim() ? JSON.parse(fileData) : [] // if fileData then parse the string to object else return empty 
+      }catch(error) {
+        if (error.code !== 'ENOENT') {
+          users = [];
+        }else {
+          console.log("Error reading file", error);
+          return res.status(500).send({error : "Server error"});
+        }
+      }
+
+      const usernameExists = users.some(user => user.email === userData.email || user.username === userData.username);
+      if (!usernameExists) {
+        return res.status(400).send({message : "Username does not exists ...!"});
+      }
+
+      const current_user = users.find(user => user.username === userData.username);
+
+      const loginSuccess = users.some(user => user.username === userData.username && user.password === userData.password);
+      if (loginSuccess) {
+        return res.status(200).send({message : "Login Successful", preferred_language: current_user.preferred_language});
+      }else{
+        return res.status(400).send({message : "Password is wrong"});
+      }
+
+      
+
+      
+
+  }catch(error){
+    console.error("Error:", error);
+    res.status(500).send({
+      error : "Server error"
+    })
+  }
+});
+
+
 
 function randomString(length) {
   var chars = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXTZabcdefghiklmnopqrstuvwxyz'.split('');
@@ -63,10 +152,12 @@ function randomString(length) {
   return str;
 }
 
+
+
 const handleTranslation = async (text) => {
   try {
     console.log("Loggging .......................................",JSON.stringify(text))
-  const response = await axios.post( 'http://localhost:8000/get_text', text, { headers: { "Content-Type": "application/json" }});
+    const response = await axios.post( 'http://localhost:8000/get_text', text, { headers: { "Content-Type": "application/json" }});
   
       console.log("Response in function ---> ",response.data)
       console.log("Response type in function ---> ",typeof response.data)
@@ -82,6 +173,7 @@ const handleTranslation = async (text) => {
 }
 
 
+
 let language_List = [];           //  [ 'en', 'es' ]
 // const sender_language_text;    // { en: 'Hello', es: 'Hola' }
 let client_list = [] 
@@ -95,8 +187,6 @@ wss.on('connection', (ws) => {
 
     const messageHandler = async (message) => {
 
-          
-     
       try {
 
         // If the data comes in the form of object, then convert it to string

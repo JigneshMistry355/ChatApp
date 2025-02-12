@@ -1,14 +1,16 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+// import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
 import Header from '../Header/header'
 
 export default function RegisterUser() {
 
-    const navigate = useNavigate()
+    // const navigate = useNavigate()
     
+    const [fullname, setFullname] = useState('');
     const [username, setUsername] = useState('')
     const [email, setEmail] = useState('')
+    const [preferred_language, set_preferred_language] = useState('')
     const [password, setPassword] = useState('') 
     const [confirmPassword, setConfirmPassword] = useState('')
 
@@ -16,6 +18,7 @@ export default function RegisterUser() {
         await axios.post('http://localhost:3001/userdata', {
             username : username,
             email : email,
+            preferred_language: preferred_language,
             password : password,
             confirmPassword : confirmPassword
         })
@@ -26,7 +29,7 @@ export default function RegisterUser() {
             console.log(error.response.data.message)
             alert(error.response.data.message)
         })
-        navigate('/')
+        // navigate('/')
         // console.log(`Data sent ${response}`);
     }
 
@@ -44,14 +47,23 @@ export default function RegisterUser() {
           
         </div>
         <div className='flex flex-grow justify-center items-center w-1/2 min-h-fit bg-black animate-slide-down'>
-          <div className=' flex flex-col w-fit h-1/2 min-h-fit py-4 rounded-xl items-center justify-between shadow-3xl border-2 bg-gradient-to-br from-white to-slate-400 opacity-85 z-10 animate-bounce-twice'>
+          <div className=' flex flex-col w-fit min-h-fit py-4 rounded-xl items-center justify-between shadow-3xl border-2 bg-gradient-to-br from-white to-slate-400 opacity-85 z-10 animate-bounce-twice'>
             <h1 className='text-center font-mono font-bold text-4xl bg-gradient-to-r from-orange-700 to-green-500 text-transparent bg-clip-text z-20'>Register</h1>
               <div className='flex flex-col m-4 px-4 justify-around  h-3/4'>
+              <div className='flex m-2'>
+                  <input 
+                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-20' 
+                      type="text" 
+                      placeholder='Full name' 
+                      value={fullname}
+                      onChange={(e) => setFullname(e.target.value)}
+                  />
+                </div>
                 <div className='flex m-2'>
                   <input 
                       className='p-1 px-2 rounded-md min-w-80 shadow-xl z-20' 
                       type="text" 
-                      placeholder='username' 
+                      placeholder='username (unique)' 
                       value={username}
                       onChange={(e) => setUsername(e.target.value)}
                   />
@@ -63,6 +75,15 @@ export default function RegisterUser() {
                       placeholder='email' 
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
+                  />
+                </div>
+                <div className='flex m-2'>
+                  <input 
+                      className='p-1 px-2 rounded-md min-w-80 shadow-xl z-20' 
+                      type="email" 
+                      placeholder='Preferred Language' 
+                      value={preferred_language}
+                      onChange={(e) => set_preferred_language(e.target.value)}
                   />
                 </div>
                 <div className='flex m-2'>                                                             
@@ -83,15 +104,16 @@ export default function RegisterUser() {
                       onChange={(e) => setConfirmPassword(e.target.value)}    
                   />
                 </div>
+                <div className='flex m-2 '>
+                  <button 
+                      className='shadow-lg w-full bg-red-700 hover:bg-gradient-to-b hover:from-red-500 hover:to-red-700 py-2 rounded-md text-white z-10' 
+                      type='button' 
+                      onClick={handleLogin}>
+                        Submit
+                  </button>
             </div>
-            <div className='flex justify-center items-center my-4'>
-                <button 
-                    className='shadow-lg px-6 bg-red-700 hover:bg-gradient-to-b hover:from-red-500 hover:to-red-700 py-2 rounded-md text-white z-10' 
-                    type='button' 
-                    onClick={handleLogin}>
-                      Submit
-                </button>
             </div>
+            
         </div>
       </div>
       </div>

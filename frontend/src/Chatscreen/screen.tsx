@@ -50,7 +50,7 @@ export default function Screen() {
     const { search } = useLocation();
     const params = new URLSearchParams(search);
     const data:string | null = params?.get('username');
-    const preferred_language: string | null = params?.get('password')
+    const preferred_language: string | null = params?.get('preferred_language')
     const name_list = ['Edit Profile', 'New Chat', 'Settings', 'Logout'];
     const client = useRef<CustomW3WebSocket | null>(null);
     const [newText, setNewText] = useState('');
@@ -91,7 +91,7 @@ export default function Screen() {
     useEffect(() => {
         const urlParams = new URLSearchParams(location.search);
         const username = urlParams.get("username");
-        const password = urlParams.get("password");
+        const password = urlParams.get("preferred_language");
 
         if (!username || !password) {
             console.log("❌ No login credentials found. WebSocket not connected.");
@@ -432,7 +432,7 @@ export default function Screen() {
                                     />
                              </div>
                              <div>
-                                <button onClick={create_connection} className="bg-[#f12121] px-4 rounded-md">
+                                <button onClick={create_connection} className="bg-[#f12121] px-4 rounded-md text-white py-2 hover:bg-[#bd2727]">
                                     Submit
                                 </button>
                              </div>
