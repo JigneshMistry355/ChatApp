@@ -6,5 +6,21 @@
     "preferred_language": "es",
     "email": "jignesh@gmail.com",
     "password": "123"
+  },
+  {
+    "user_id": "0GgAzfPQni",
+    "fullname": "Sahil Jadhav",
+    "username": "Sahil",
+    "preferred_language": "en",
+    "email": "sahil@gmail.com",
+    "password": "123"
+  },
+  {
+    "user_id": "ErcCrSquVc",
+    "fullname": "Tanay Mukadam",
+    "username": "Tanay",
+    "preferred_language": "de",
+    "email": "tanay@gmail.com",
+    "password": "123"
   }
 ]

@@ -1,66 +1,71 @@
 const express = require('express');
+const cors = require('cors');
+
 const http = require('http');
-const cors = require('cors')
 const WebSocket = require('ws');
-const { error } = require('console');
-const axios = require('axios');
-const { text } = require('stream/consumers');
-// const MongoClient = require('mongodb').MongoClient
 const fs = require('fs');
-const {promisify} = require('util');
+
+const { promisify } = require('util');
 const readFileAsync = promisify(fs.readFile);
 const writeFileAsync = promisify(fs.writeFile);
 
 const app = express();
 const server = http.createServer(app);
 const wss = new WebSocket.Server({ server });
+const axios = require('axios');
+
 
 app.use(cors())
 app.use(express.json())
 app.use(express.urlencoded({extended:true}))
 
 
-// ####### Data coming from register page ##############
-
-// username : username,
-// email : email,
-// password : password,
-// confirmPassword : confirmPassword
-
-
+// API for user registration
 app.post('/userdata', async (req, res) => {
+
+  // ####### Data coming from register page ##############
+  // username : username,
+  // email : email,
+  // password : password,
+  // confirmPassword : confirmPassword
 
   try{
 
       const userData = req.body;
-      let users = []
+      let users = [];
 
+      // confirm password validation
       if (userData.password !== userData.confirmPassword){
-        return res.status(400).send({
-          message : "Passwords Mismatched"
-        })
+          return res.status(400).send({
+            message : "Passwords Mismatched"
+          })
       }
 
       try {
-        const fileData = await readFileAsync('dbData.json', 'utf-8');
-        users = fileData.trim() ? JSON.parse(fileData) : [] // if fileData then parse the string to object else return empty 
+          // read entire json file
+          const fileData = await readFileAsync('dbData.json', 'utf-8');
+          // if fileData not empty -> parse the string to object else return empty 
+          users = fileData.trim() ? JSON.parse(fileData) : [] 
       }catch(error) {
-        if (error.code !== 'ENOENT') {
-          users = [];
-        }else {
-          console.log("Error reading file", error);
-          return res.status(500).send({error : "Server error"});
-        }
+          if (error.code !== 'ENOENT') {
+            users = [];
+          }else {
+            console.log("Error reading file", error);
+            return res.status(500).send({error : "Server error"});
+          }
       }
 
-
+      // Check if the user is already registered
+      // stores boolean 
       const userExists = users.some(user => user.email === userData.email && user.username === userData.username);
-      if (userExists) {
-        return res.status(400).send({message : "User already exists"})
+      if (userExists) { // if true
+          return res.status(400).send({message : "User already exists"})
       }
 
+      // Check if username (unique) is already taken
+      // stores boolean 
       const usernameExists = users.some(user => user.username === userData.username);
-      if (usernameExists){
+      if (usernameExists){ // if true
         return res.status(400).send({message : "Username already exists"});
       }
       
@@ -73,8 +78,11 @@ app.post('/userdata', async (req, res) => {
         password : userData.password
       }
 
+      // if user is new then push into users array
       users.push(newUser);
 
+      // write the entire array to the json file
+      // use writeFile so that old file is replaced
       await writeFileAsync('dbData.json', JSON.stringify(users, null, 2));
       console.log(`User data : ${newUser} saved!`)
 
@@ -222,7 +230,7 @@ wss.on('connection', (ws) => {
             //   language_List.push(ws.preferred_language);
             // }
             
-            
+            // create a room in rooms = { 1234 : { clients:{},language_list:[] } }
             if (!rooms[room]) {
               rooms[room] = {
                 clients : new Set(),
@@ -424,6 +432,20 @@ wss.on('connection', (ws) => {
         if (rooms[ws.room].clients.size === 0) {
           delete rooms[ws.room]
         }
+
+        rooms[ws.room].clients.forEach((client) => {
+          console.log("sending ack to sender")
+          if ((client.readyState === WebSocket.OPEN && (client.room === ws.room))) {
+              
+              client.send(JSON.stringify({
+              type : "join",
+              message: `🟢 ${ws.sender} left room ${ws.room}`,
+              room: ws.room,
+              all_clients: [...rooms[ws.room].clients].map(c => c.sender),
+            } ));
+          }
+          console.log("Data sent -------------------")
+        });
       }
       const leaveMessage = {
         message: `${ws.sender || "A user"} left room ${ws.room || "unknown room"}`,

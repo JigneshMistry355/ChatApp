@@ -1,9 +1,9 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import axios from 'axios'
-import { useDispatch, useSelector } from "react-redux";
-import { RootState, AppDispatch } from "../store";
-import { login, logout } from "../reducers";
+import { useDispatch } from "react-redux";
+import { AppDispatch } from "../store";
+import { login } from "../reducers";
 
 interface User {
   fullname: string;
@@ -21,8 +21,7 @@ function Login() {
   const [password, setPassword] = useState('') 
 
   const dispatch: AppDispatch = useDispatch();
-  const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
-  const user = useSelector((state: RootState) => state.auth.user);
+  
 
   const handleLogin = async () => {
     try {

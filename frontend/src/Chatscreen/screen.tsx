@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useRef } from "react";
 import { w3cwebsocket } from "websocket";
-import { useLocation } from 'react-router-dom'
+import { useSelector,useDispatch } from 'react-redux'
+import { RootState, AppDispatch } from "../store";
+// import { login } from '../reducers';
+import { setClients, clearClients } from "../features/ClientsList/clientListSlice";
+import Login from "../Login/Login";
+
 // import axios from "axios";
 
 // type Chat = {
@@ -45,22 +50,79 @@ class CustomW3WebSocket extends w3cwebsocket {
     }
 }
 
+interface User {
+    fullname: string;
+    username : string,
+    email : string,
+    preferred_language: string,
+}
+
 export default function Screen() {
 
-    const { search } = useLocation();
-    const params = new URLSearchParams(search);
-    const data:string | null = params?.get('username');
-    const preferred_language: string | null = params?.get('preferred_language')
+    const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
+    const userData = useSelector((state: RootState) => state.auth.user);
+    const clientList = useSelector((state: RootState) => state.clients.client_list)
+    const dispatchClients = useDispatch<AppDispatch>();
+
+    console.log("########## Data from store ####################");
+    console.log(isAuthenticated);
+    console.log((userData));
+    console.log(clientList);
+    
+    
     const name_list = ['Edit Profile', 'New Chat', 'Settings', 'Logout'];
     const client = useRef<CustomW3WebSocket | null>(null);
     const [newText, setNewText] = useState('');
     const [isConnected, setIsConnected] = useState(false);
     
     const chatEndRef = useRef<HTMLDivElement | null>(null); 
-    const [received, setReceived] = useState<string | ArrayBuffer>('')
+    const [received, setReceived] = useState<string | ArrayBuffer>('');
     const [sender, setSender] = useState('');
     const [roomID, setRoomID] = useState('');
-    const [client_list, set_client_list] = useState([]);
+    // const [client_list, set_client_list] = useState([]);
+
+    const languageSelect: Record<string, string> = {
+        en: "English",
+        es: "Spanish",
+        fr: "French",
+        de: "German",
+        it: "Italian",
+        pt: "Portuguese",
+        nl: "Dutch",
+        ru: "Russian",
+        pl: "Polish",
+        sv: "Swedish",
+        da: "Danish",
+        fi: "Finnish",
+        no: "Norwegian",
+        el: "Greek",
+        cs: "Czech",
+        hu: "Hungarian",
+        ro: "Romanian",
+        bg: "Bulgarian",
+        sk: "Slovak",
+        sl: "Slovenian",
+        hr: "Croatian",
+        sr: "Serbian",
+        mk: "Macedonian",
+        et: "Estonian",
+        lv: "Latvian",
+        lt: "Lithuanian",
+        mt: "Maltese",
+        is: "Icelandic",
+        ga: "Irish",
+        cy: "Welsh",
+        sq: "Albanian",
+        bs: "Bosnian",
+        hi: "Hindi",
+        ja: "Japanese",
+        zh: "Chinese (Simplified)",
+        ko: "Korean",
+        ta: "Tamil",
+        th: "Thai",
+    };
+
+    // console.log(languageSelect[userData?.preferred_language ?? 'unknown'] || 'Unknown Language')
 
     const Chats:ChatArr[] = [
         // {ABC : "Hello, How are you?"},
@@ -151,7 +213,8 @@ export default function Screen() {
 
                     if (type === "join") {
                         setRoomID(room);
-                        set_client_list(parsedMessage.all_clients);
+                        // set_client_list(parsedMessage.all_clients);
+                        dispatchClients(setClients(parsedMessage.all_clients))
                     }
     
         
@@ -192,7 +255,7 @@ export default function Screen() {
 
     }, [isConnected]);
     
-    const username:string | undefined = data?.toString() ?? 'anonymous';
+    const username:string | undefined = userData?.username?.toString() ?? 'anonymous';
     
 //    if (client) {
 //     client.id = username
@@ -208,7 +271,7 @@ export default function Screen() {
     const handleSend = (event:React.FormEvent) => {
         event?.preventDefault();
         if (newText.trim() !== "") {
-            const message = JSON.stringify({type:"message", room: "room1", sender:username, preferred_language: preferred_language, text:newText})
+            const message = JSON.stringify({type:"message", room: "room1", sender:username, preferred_language: userData?.preferred_language, text:newText})
             if (client.current?.readyState === WebSocket.OPEN){
                 // Message sent as a JSON string 
                 console.log("\nMessage type ::: ", typeof message) //string
@@ -316,25 +379,31 @@ export default function Screen() {
 
     return (
         <>
+            {isAuthenticated ? (
             <div className="flex flex-row h-screen w-screen">
 
                 <div className="flex flex-col w-1/4 bg-[#150f77]">
 
-                    <div className="flex h-1/6 ">
-
+                    <div className="flex flex-row h-1/6 items-center">
+                        <div className="flex w-1/6 h-1/2 px-4 ml-4 justify-center items-center rounded-full bg-[url(/public/assets/images/blue-circle-with-white-user_78370-4707.avif)] bg-cover ">
+                            
+                        </div>
+                        <div className="flex justify-start px-4 items-center text-center w-full">
+                            <h1 className=" text-white text-center">{userData?.fullname}</h1>
+                        </div>
                     </div>
 
                     { isConnected ? (
                         <div className="flex flex-col h-5/6 bg-gradient-to-b from-[#150f77] via-[#191392] to-[#9e28ec]">
-                        {client_list?.map((names, index) => (
+                        {clientList?.map((names, index) => (
                             <div key={index} className="flex items-center h-11 mx-2 my-[1px] bg-gradient-to-br bg-[#5b54d4] px-4 shadow-md border-separate hover:cursor-pointer hover:from-[#150f77] hover:via-[#191392e7] hover:to-[#9d28ece0] hover:bg-[#554ed4] -skew-x-3">
-                                {names === data ? (
+                                {names === userData?.username ? (
                                     <div className="flex flex-row w-full justify-between ">
                                         <div className="flex w-2/3">
                                             <h5 className="text-white text-left">{names} 🟢 </h5>
                                         </div>
                                         <div className="flex w-1/3 justify-end">
-                                            <h5 className="flex text-white text-right">{preferred_language}</h5>
+                                            <h5 className="flex text-white text-right">{languageSelect[userData?.preferred_language ?? 'unknown'] || 'Unknown Language'}</h5>
                                         </div>
                                         
                                     </div>
@@ -460,6 +529,9 @@ export default function Screen() {
                 </div>
 
             </div>
+            ) : (
+                <Login />
+            ) }
         </>
 
         // <div className="flex flex-col h-screen w-screen bg-slate-200">
