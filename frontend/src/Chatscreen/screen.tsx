@@ -3,7 +3,7 @@ import { w3cwebsocket } from "websocket";
 import { useSelector,useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from "../store";
 // import { login } from '../reducers';
-import { setClients, clearClients } from "../features/ClientsList/clientListSlice";
+import { setClients } from "../features/ClientsList/clientListSlice";
 import Login from "../Login/Login";
 
 // import axios from "axios";
@@ -50,12 +50,6 @@ class CustomW3WebSocket extends w3cwebsocket {
     }
 }
 
-interface User {
-    fullname: string;
-    username : string,
-    email : string,
-    preferred_language: string,
-}
 
 export default function Screen() {
 

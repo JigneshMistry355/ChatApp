@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: chatapp-frontend-image
+    build: .
+    develop:
+      watch: 
+        - action: sync
+          path: ./frontend
+          target: /src/frontend
+          ignore:
+            - node_modules/
+        - action: rebuild
+          path: package.json
+    ports: 
+      - "5173:5173"
+    command: npm run dev
+    volumes: 
+      - .:/src
+
+      version: '3.8'
+
+services:
+  frontend:
+    image: chatapp-frontend-image
+    build: .
+    ports:
+      - "5173:5173"
+    command: npm run dev  # Command to start the development server (e.g., Vite)
+    volumes:
+      - ./frontend:/src/frontend  # Mount your frontend code directory into the container
+      - /src/frontend/node_modules  # Optionally, mount node_modules to persist between container restarts
+    environment:
+      - NODE_ENV=development
+    
