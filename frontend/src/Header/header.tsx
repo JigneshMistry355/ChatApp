@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 function Header() {
   const navigate = useNavigate()
   return (
-    <div className='flex flex-col md:flex-col box-border justify-around items-center w-1/2 p-4'>
+    <div className='flex flex-row box-border justify-around items-center w-1/2 p-4'>
 
       <div className='flex w-fit h-fit'>
         <button className='flex box-border font-serif font-bold text-white text-md hover:drop-shadow-2xl hover:text-slate-200  hover:box-border p-2' type='submit'>Explore</button>

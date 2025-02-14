@@ -1,36 +1,65 @@
-version: '3.8'
+
+
+# services:
+#   frontend:
+#     image: chatapp-frontend-image
+#     build: .
+#     develop:
+#       watch: 
+#         - action: sync
+#           path: ./frontend
+#           target: /src/frontend
+#           ignore:
+#             - node_modules/
+#         - action: rebuild
+#           path: package.json
+#     ports: 
+#       - "5173:5173"
+#     command: npm run dev
+#     volumes: 
+#       - .:/src
 
 services:
-  frontend:
-    image: chatapp-frontend-image
-    build: .
-    develop:
-      watch: 
-        - action: sync
-          path: ./frontend
-          target: /src/frontend
-          ignore:
-            - node_modules/
-        - action: rebuild
-          path: package.json
-    ports: 
-      - "5173:5173"
+  web:
+    build: .  # This tells Docker to use the 'frontend' folder as the build context
     command: npm run dev
-    volumes: 
-      - .:/src
-
-      version: '3.8'
-
-services:
-  frontend:
-    image: chatapp-frontend-image
-    build: .
     ports:
       - "5173:5173"
-    command: npm run dev  # Command to start the development server (e.g., Vite)
-    volumes:
-      - ./frontend:/src/frontend  # Mount your frontend code directory into the container
-      - /src/frontend/node_modules  # Optionally, mount node_modules to persist between container restarts
-    environment:
-      - NODE_ENV=development
+    develop:
+        watch:
+          - action: sync
+            path: ./web  # Sync only the frontend directory
+            target: /src/web  
+          - action: rebuild
+            path: package.json
+  redis:
+    image: "redis:alpine"
+
+# services:
+#   web:
+#     build: .
+#     ports:
+#       - "5173:5173"
+#     develop:
+#       watch:
+#         - action: sync
+#           path: .
+#           target: /app
+#   redis:
+#     image: "redis:alpine"
+
+# version: '3.8'
+
+# services:
+#   frontend:
+#     image: chatapp-frontend-image
+#     build: .
+#     ports:
+#       - "5173:5173"
+#     command: npm run dev  # Command to start the development server (e.g., Vite)
+#     volumes:
+#       - ./frontend:/src/frontend  # Mount your frontend code directory into the container
+#       - /src/frontend/node_modules  # Optionally, mount node_modules to persist between container restarts
+#     environment:
+#       - NODE_ENV=development
     

@@ -81,7 +81,7 @@ export default function RegisterUser() {
                 <div className='flex m-2'>
                   <input 
                       className='p-1 px-2 rounded-md min-w-80 shadow-xl z-20' 
-                      type="email" 
+                      type="emai  l" 
                       placeholder='Preferred Language' 
                       value={preferred_language}
                       onChange={(e) => set_preferred_language(e.target.value)}
