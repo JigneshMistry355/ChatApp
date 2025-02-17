@@ -59,7 +59,7 @@ app.post('/userdata', async (req, res) => {
       // stores boolean 
       const userExists = users.some(user => user.email === userData.email && user.username === userData.username);
       if (userExists) { // if true
-          return res.status(400).send({message : "User already exists"})
+            return res.status(400).send({message : "User already exists"})
       }
 
       // Check if username (unique) is already taken
@@ -132,16 +132,42 @@ app.post('/loginValidation', async (req, res) => {
         return res.status(400).send({message : "Password is wrong"});
       }
 
-      
-
-      
-
   }catch(error){
     console.error("Error:", error);
     res.status(500).send({
       error : "Server error"
     })
   }
+});
+
+app.get('/getUserData', async (req, res) => {
+  const request = req.query.username;
+  let users = [];
+
+  try {
+    const fileData = await readFileAsync('dbData.json', 'utf-8');
+    users = fileData.trim() ? JSON.parse(fileData) : [] // if fileData then parse the string to object else return empty 
+  }catch(error) {
+    if (error.code !== 'ENOENT') {
+      users = [];
+    }else {
+      console.log("Error reading file", error);
+      return res.status(500).send({error : "Server error"});
+    }
+  }
+
+  const current_user = users.find(user => user.username === request);
+  
+  console.log(current_user);
+  
+  const UserData = {
+    username: current_user.username,
+    email: current_user.email,
+    preferred_language: current_user.preferred_language
+  }
+
+  console.log(request);
+  return res.status(200).send({ "Message" : UserData });
 });
 
 

@@ -42,7 +42,7 @@ function Login() {
       dispatch(login(user));
 
       if (response.status === 200) {
-        navigate(`/screen?username=${username}&preferred_language=${response.data.preferred_language}`);
+        navigate(`/screen`);
       }
     }catch(error:any) {
       console.error("Error",error.response.data.message);

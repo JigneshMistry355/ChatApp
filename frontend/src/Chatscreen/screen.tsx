@@ -1,18 +1,12 @@
 import React, { useEffect, useState, useRef } from "react";
 import { w3cwebsocket } from "websocket";
-import { useSelector,useDispatch } from 'react-redux'
+import { useSelector, useDispatch } from 'react-redux'
 import { RootState, AppDispatch } from "../store";
-// import { login } from '../reducers';
+import { logout } from '../reducers';
 import { setClients } from "../features/ClientsList/clientListSlice";
 import Login from "../Login/Login";
+import axios from "axios";
 
-// import axios from "axios";
-
-// type Chat = {
-//     [key : number] : {
-//         [key : string] : string
-//     }
-// }
 
 type ChatArr = {
     [key : string] : string
@@ -53,26 +47,30 @@ class CustomW3WebSocket extends w3cwebsocket {
 
 export default function Screen() {
 
+//  ##############################################################################################################
+    // Global data
+//  ##############################################################################################################
+
+    // redux
     const isAuthenticated = useSelector((state: RootState) => state.auth.isAuthenticated);
     const userData = useSelector((state: RootState) => state.auth.user);
     const clientList = useSelector((state: RootState) => state.clients.client_list)
     const dispatchClients = useDispatch<AppDispatch>();
+    const dispatchLogout = useDispatch<AppDispatch>();
 
-    console.log("########## Data from store ####################");
-    console.log(isAuthenticated);
-    console.log((userData));
-    console.log(clientList);
-    
+    const username:string | undefined = userData?.username?.toString() ?? 'anonymous';
+    const preferred_language = userData?.preferred_language;
     
     const name_list = ['Edit Profile', 'New Chat', 'Settings', 'Logout'];
     const client = useRef<CustomW3WebSocket | null>(null);
-    const [newText, setNewText] = useState('');
-    const [isConnected, setIsConnected] = useState(false);
-    
     const chatEndRef = useRef<HTMLDivElement | null>(null); 
+    
+    const [newChat, setNewChat] = useState(true);
+    const [editPage, setEditPage] = useState(false);
+    
     const [received, setReceived] = useState<string | ArrayBuffer>('');
     const [sender, setSender] = useState('');
-    const [roomID, setRoomID] = useState('');
+    
     // const [client_list, set_client_list] = useState([]);
 
     const languageSelect: Record<string, string> = {
@@ -129,31 +127,60 @@ export default function Screen() {
         // {XYZ :  "React Navigation's native stack navigator provides a way for your app to transition between screens and manage navigation history. If your app uses only one stack navigator then it is conceptually similar to how a web browser handles navigation state!" },
     ];
 
-    const [Chat, setChats] = useState<ChatArr[]>(Chats); 
 
+//  ##############################################################################################################
+    // Message handling functions
+//  ##############################################################################################################
+
+    const [newText, setNewText] = useState('');
+    const [Chat, setChats] = useState<ChatArr[]>(Chats);
+    const [roomID, setRoomID] = useState('');
+
+    const handleSend = (event:React.FormEvent) => {
+        event?.preventDefault();
+        if (newText.trim() !== "") {
+            const message = JSON.stringify({type:"message", room: roomID, sender:username, preferred_language: userData?.preferred_language, text:newText})
+            if (client.current?.readyState === WebSocket.OPEN){
+                // Message sent as a JSON string 
+                console.log("\nMessage type ::: ", typeof message) //string
+                console.log("\n Message sent ::: ",message) // {sender:username, text:newText}
+                client.current.send(message);
+            }else{
+                console.log("Websocket is not open")
+            }
+            
+            setChats((prevChat) => [...prevChat, {[username] : newText}]);
+            setNewText("");
+        } 
+    }
+
+
+
+//  ##############################################################################################################
+    // Create a connection to server
+//  ##############################################################################################################
+
+
+    // opens up chat screen after you enter room number and submit
+    const [isConnected, setIsConnected] = useState(false);
     const create_connection = (event:React.FormEvent) => {
         event?.preventDefault();
         if (!roomID) {
             console.log("❌ Room ID is required.");
             return;
         }
-        setIsConnected(true)
+        setIsConnected(true);
         console.log("✅ Room ID Submitted:", roomID);
-    }
+    };
 
-    // const [client, setClient] = useState<CustomW3WebSocket>();
-    
-
+    // creates connection to server after you login and isConnected is set to True
     useEffect(() => {
-        const urlParams = new URLSearchParams(location.search);
-        const username = urlParams.get("username");
-        const password = urlParams.get("preferred_language");
 
-        if (!username || !password) {
+        if (!username || !preferred_language) {
             console.log("❌ No login credentials found. WebSocket not connected.");
             return;
         }
-        console.log(username, password)
+        console.log(username, preferred_language)
 
         if (!roomID) {
             console.log("❌ Room ID is required.");
@@ -164,7 +191,7 @@ export default function Screen() {
             console.log("🔑 Logging in and establishing WebSocket connection...");
 
             // Create WebSocket connection only after login
-            client.current = new CustomW3WebSocket('ws://localhost:3000/', password, username, null, "join", roomID);
+            client.current = new CustomW3WebSocket('ws://localhost:3000/', preferred_language, username, null, "join", roomID);
             // setClient(newClient);
 
             console.log("#############################################################")
@@ -210,7 +237,6 @@ export default function Screen() {
                         // set_client_list(parsedMessage.all_clients);
                         dispatchClients(setClients(parsedMessage.all_clients))
                     }
-    
         
                     console.log(typeof(parsedMessage.text))
                     // console.log(result)
@@ -249,36 +275,63 @@ export default function Screen() {
 
     }, [isConnected]);
     
-    const username:string | undefined = userData?.username?.toString() ?? 'anonymous';
     
-//    if (client) {
-//     client.id = username
-//     client.preferred_language = preferred_language
-//     client.username = username
-//     client.onopen = () => {
-//         console.log("Connected to websocket server")
-//         console.log(client)
-//     }
-//    }
     
 
-    const handleSend = (event:React.FormEvent) => {
-        event?.preventDefault();
-        if (newText.trim() !== "") {
-            const message = JSON.stringify({type:"message", room: "room1", sender:username, preferred_language: userData?.preferred_language, text:newText})
-            if (client.current?.readyState === WebSocket.OPEN){
-                // Message sent as a JSON string 
-                console.log("\nMessage type ::: ", typeof message) //string
-                console.log("\n Message sent ::: ",message) // {sender:username, text:newText}
-                client.current.send(message);
-            }else{
-                console.log("Websocket is not open")
-            }
-            
-            setChats((prevChat) => [...prevChat, {[username] : newText}]);
-            setNewText("");
-        } 
+// #################################################################################################################
+    // Handle Edit User Details
+// #################################################################################################################
+
+    const [fetchedUsername, setFetchedUsername] = useState('');
+    const [fetchedEmail, setFetchedEmail] = useState('');
+    const [fetchedPreferredLanguage, setFetchedPreferredLanguage] = useState('');
+
+    const getUserData = async () => {
+        try {
+            const response = await axios.get('http://localhost:3001/getUserData', {
+                params: {
+                    username: userData?.username
+                }
+            });
+            console.log(response.data.Message);
+            const {username, email, preferred_language} = response.data.Message;
+            console.log(username);
+            setFetchedUsername(username);
+            console.log(email);
+            setFetchedEmail(email);
+            console.log(preferred_language);
+            setFetchedPreferredLanguage(preferred_language);
+
+        } catch (error) {
+            console.error("Error fetching user data:", error);
+        }
     }
+
+// ###############################################################################################################
+
+    const handleLogout = () => {
+        dispatchLogout(logout())
+    }
+
+
+    const handleNavigation = (names: string) => {
+        if (names === 'Logout') {
+            handleLogout();
+            return;
+        }
+        if (names === 'Edit Profile') {
+            setNewChat(false);
+            setEditPage(true);
+            getUserData()
+        }
+        if (names === 'New Chat'){
+            setNewChat(true);
+            setEditPage(false);
+        }
+    }
+    
+
+    
 
     useEffect(() => {
 
@@ -411,11 +464,11 @@ export default function Screen() {
                         ))}
                         </div>
                     ) : (
-                        <div className="flex flex-col h-5/6 bg-[#150f77]">
+                        <div className="flex flex-col h-5/6 bg-gradient-to-b from-[#150f77] via-[#191392] to-[#9e28ec]">
                         {name_list?.map((names, index) => (
-                            <div key={index} className="flex items-center h-11 mx-2 my-[1px] bg-[#5b54d4] px-4 shadow-md border-separate hover:cursor-pointer hover:bg-[#554ed4] -skew-x-3">
-                                <button>
-                                    <h5 className="text-white">{names}</h5>
+                            <div key={index} className="flex items-center h-11 mx-2 my-[1px] bg-gradient-to-br bg-[#5b54d4] shadow-md border-separate hover:cursor-pointer hover:from-[#150f77] hover:via-[#191392e7] hover:to-[#9d28ece0] hover:bg-[#554ed4] -skew-x-3">
+                                <button className="w-full h-full" onClick={() => handleNavigation(names)}>
+                                    <h5 className="text-white font-extralight">{names}</h5>
                                 </button>
                                
                             </div>
@@ -502,22 +555,60 @@ export default function Screen() {
 
                     </div>
                     ):(
-                        <div className="flex flex-col w-full p-4">
-                             <div className="flex flex-col w-full my-4">
-                                <label>Create OR Join a ROOM with an ID</label>
-                                <input 
-                                className="border-2"
-                                    type="text" 
-                                    value={roomID}
-                                    onChange={(event) => setRoomID(event.target.value)}
-                                    />
-                             </div>
-                             <div>
-                                <button onClick={create_connection} className="bg-[#f12121] px-4 rounded-md text-white py-2 hover:bg-[#bd2727]">
-                                    Submit
-                                </button>
-                             </div>
-                        </div>
+                    <>
+                        {newChat && (
+                            <div className="flex flex-col w-full p-4">
+                                <div className="flex flex-col w-full my-4">
+                                    <label>Create OR Join a ROOM with an ID</label>
+                                    <input 
+                                    className="border-2"
+                                        type="text" 
+                                        value={roomID}
+                                        onChange={(event) => setRoomID(event.target.value)}
+                                        />
+                                </div>
+                                <div>
+                                    <button onClick={create_connection} className="bg-[#f12121] px-4 rounded-md text-white py-2 hover:bg-[#bd2727]">
+                                        Submit
+                                    </button>
+                                </div>
+                            </div>
+                        )} 
+
+                        {editPage && (
+                            <div className="flex flex-grow bg-white justify-center items-center">
+                                <div className="flex flex-col w-3/4 h-5/6 bg-[#bca3ff] rounded-xl shadow-xl shadow-black justify-center items-center">
+                                    <div className="flex w-2/3 p-4 justify-center items-center">
+                                        <div className="flex w-full">
+                                            <input  
+                                                className="w-full text-whilte p-2 border-2 rounded-md shadow-xl shadow-[#5c5c5c]" 
+                                                type="text" 
+                                                value={fetchedUsername}
+                                                />
+                                        </div>
+                                    </div>
+                                    <div className="flex w-2/3 p-4 justify-center items-center">
+                                        <div className="flex w-full">
+                                            <input 
+                                                className="w-full text-whilte p-2 border-2 rounded-md shadow-xl shadow-[#5c5c5c]" 
+                                                type="text" 
+                                                value={fetchedEmail}
+                                                />
+                                        </div>
+                                    </div>
+                                    <div className="flex w-2/3 p-4 justify-center items-center">
+                                        <div className="flex w-full">
+                                            <input 
+                                                className="w-full text-whilte p-2 border-2 rounded-md shadow-xl shadow-[#5c5c5c]" 
+                                                type="text" 
+                                                value={fetchedPreferredLanguage}
+                                                />
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        )}
+                    </>
                     )}
 
                 </div>
