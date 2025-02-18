@@ -170,6 +170,25 @@ app.get('/getUserData', async (req, res) => {
   return res.status(200).send({ "Message" : UserData });
 });
 
+async function getUserId(username){
+  let users = [];
+
+  try {
+    const fileData = await readFileAsync('dbData.json', 'utf-8');
+    users = fileData.trim() ? JSON.parse(fileData) : [] // if fileData then parse the string to object else return empty 
+  }catch(error) {
+    if (error.code !== 'ENOENT') {
+      users = [];
+    }else {
+      console.log("Error reading file", error);
+      return res.status(500).send({error : "Server error"});
+    }
+  }
+
+  const current_user = users.find(user => user.username === username);
+  return current_user.user_id
+
+}
 
 
 function randomString(length) {
@@ -241,20 +260,11 @@ wss.on('connection', (ws) => {
         if (type === "join" && room) {
 
             // assigning extracted values to current instance of websocket
-            ws.id = randomString(10);
+            ws.id = await getUserId(sender);
             ws.room = room;
             ws.sender = sender;
             ws.preferred_language = preferred_language;
-           
-
-            // if (!client_list.includes(ws.sender)) {
-            //   client_list.push(ws.sender);
-            // }
-
-
-            // if (!language_List.includes(ws.preferred_language)) {
-            //   language_List.push(ws.preferred_language);
-            // }
+  
             
             // create a room in rooms = { 1234 : { clients:{},language_list:[] } }
             if (!rooms[room]) {
@@ -263,18 +273,41 @@ wss.on('connection', (ws) => {
                 language_List: [],
               }
             }else{
-              console.log(`${rooms[room]} already exists !!`)
+              console.log(`${rooms[room]} room already exists !!`)
             }
 
-            if (!rooms[room].clients.has(ws.sender)) {
+            const ClientExists = [...rooms[room].clients].some(client => client.id === ws.id);
+            const existingClient = [...rooms[room].clients].find(client => client.sender === ws.sender);
+            console.log("####### Loggin existing client if relogging\n",existingClient);
+            
+
+            if (!ClientExists) {
               rooms[room].clients.add(ws);
+            }else{
+              console.log(`${ws.sender} user already exists !!`) 
+              rooms[room].clients.forEach((client) => {
+                console.log("sending ack to sender")
+                if ((ws.sender === existingClient && client.readyState === WebSocket.OPEN && (client.room === ws.room))) {
+                    console.log("Entered inside for -------------------")
+                    client.send(JSON.stringify({
+                    type : "joined",
+                    message: `🟢 ${ws.sender} already joined room ${room}`,
+                    room: room,
+                    all_clients: [...rooms[room].clients].map(c => c.sender),
+                  } ));
+                }
+                console.log("Data sent -------------------")
+              });
             }
+            console.log(`\nClients in room ${JSON.stringify(rooms[room].clients)}`);
+
             
             if (!rooms[room].language_List.includes(ws.preferred_language)) {
               rooms[room].language_List.push(ws.preferred_language);
             }
 
             console.log("\nLanguage list update .............", rooms[room].language_List);
+            
 
             // rooms[room].add(ws);
             console.log(`\n✅ New client :  Username = ${ws.sender}, Language = ${ws.preferred_language} Joined room : ${room}`);

@@ -41,6 +41,7 @@ class CustomW3WebSocket extends w3cwebsocket {
                 })
             )
         }
+
     }
 }
 
@@ -237,6 +238,12 @@ export default function Screen() {
                         // set_client_list(parsedMessage.all_clients);
                         dispatchClients(setClients(parsedMessage.all_clients))
                     }
+
+                    if (type === 'joined') {
+                        console.log('\n\nParsed message from JOINED \n\n:', parsedMessage);
+                    }
+
+                
         
                     console.log(typeof(parsedMessage.text))
                     // console.log(result)
